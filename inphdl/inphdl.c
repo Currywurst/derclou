@@ -96,7 +96,8 @@ S32 inpWaitFor(S32 l_Mask)
 {
     SDL_Event ev;
     S32 action;
-    U32 WaitTime = 0;
+	double waitTicks = 0.0;
+	double waitTargetTicks = 0.0;
 
     if ((IHandler.EscStatus) && (!(l_Mask & INP_NO_ESC))) {
 	l_Mask |= INP_ESC;
@@ -106,19 +107,25 @@ S32 inpWaitFor(S32 l_Mask)
 	l_Mask |= INP_FUNCTION_KEY;
     }
 
-    action = 0;
+	action = 0;
 
-    /* Nun wird auf den Event gewartet... */
-    WaitTime = 0;
+	if (l_Mask & INP_TIME) {
+		if (IHandler.ul_WaitTicks > 0)
+			waitTargetTicks = (double) IHandler.ul_WaitTicks;
+		else
+			waitTargetTicks = 1.0;
+	}
 
     while (action == 0) {
 	gfxWaitTOF();
 
-	WaitTime++;
-	/* Abfrage des Zeit-Flags */
-	if ((l_Mask & INP_TIME) && WaitTime >= IHandler.ul_WaitTicks) {
-	    action |= INP_TIME;
-        }
+	if (l_Mask & INP_TIME) {
+	    waitTicks += gfxGetFrameDeltaTicks();
+
+	    if (waitTicks >= waitTargetTicks) {
+		action |= INP_TIME;
+	    }
+		}
 
 	while (SDL_PollEvent(&ev)) {
 	    switch (ev.type) {
@@ -258,12 +265,19 @@ void inpTurnMouse(bool us_NewStatus)
 
 void inpDelay(S32 l_Ticks)
 {
-    S32 i;
+	double targetTicks;
+	double elapsedTicks = 0.0;
 
-    for (i = 0; i < l_Ticks; i++) {
+	if (l_Ticks <= 0)
+		return;
+
+	targetTicks = (double) l_Ticks;
+
+	while (elapsedTicks < targetTicks) {
 	gfxWaitTOF();
+	elapsedTicks += gfxGetFrameDeltaTicks();
 	inpDoPseudoMultiTasking();
-    }
+	}
 }
 
 void inpSetKeyRepeat(unsigned char rate)

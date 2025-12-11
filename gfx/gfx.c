@@ -56,6 +56,88 @@ SDL_Window *sdlWindow;
 SDL_Renderer *sdlRenderer;
 SDL_Texture *sdlTexture;
 
+typedef struct FrameClock {
+    bool initialized;
+    double targetFrameMs;
+    double simulationTickMs;
+    double deltaMs;
+    Uint64 perfFreq;
+    Uint64 lastCounter;
+    Uint64 targetFrameCounts;
+} FrameClock;
+
+static FrameClock FrameTimer = {
+    false,
+    1000.0 / 60.0,
+    40.0,
+    40.0,
+    0,
+    0,
+    0
+};
+
+static void gfxEnsurePerfFreq(void)
+{
+    if (FrameTimer.perfFreq)
+        return;
+
+    FrameTimer.perfFreq = SDL_GetPerformanceFrequency();
+    if (FrameTimer.perfFreq == 0)
+        FrameTimer.perfFreq = 1;
+}
+
+static void gfxInitFrameClock(void)
+{
+    if (FrameTimer.initialized)
+        return;
+
+    gfxEnsurePerfFreq();
+
+    FrameTimer.deltaMs = FrameTimer.simulationTickMs;
+    FrameTimer.lastCounter = SDL_GetPerformanceCounter();
+
+    if (FrameTimer.targetFrameCounts == 0)
+        gfxSetFrameRate(60);
+
+    FrameTimer.initialized = true;
+}
+
+void gfxSetFrameRate(U32 fps)
+{
+    double frameMs;
+
+    if (fps == 0)
+        fps = 60;
+
+    gfxEnsurePerfFreq();
+
+    frameMs = 1000.0 / (double) fps;
+    FrameTimer.targetFrameMs = frameMs;
+    FrameTimer.targetFrameCounts =
+        (Uint64) ((FrameTimer.targetFrameMs / 1000.0) *
+                  (double) FrameTimer.perfFreq);
+
+    if (FrameTimer.targetFrameCounts == 0)
+        FrameTimer.targetFrameCounts = 1;
+}
+
+double gfxGetFrameDeltaMs(void)
+{
+    gfxInitFrameClock();
+    return FrameTimer.deltaMs;
+}
+
+double gfxGetFrameDeltaTicks(void)
+{
+    gfxInitFrameClock();
+    return FrameTimer.deltaMs / FrameTimer.simulationTickMs;
+}
+
+double gfxGetSimulationTickMs(void)
+{
+    return FrameTimer.simulationTickMs;
+}
+
 /********************************************************************
  * inits & dons
  */
@@ -66,6 +148,7 @@ void gfxInit(void)
     int sw, sh;
 
     SDL_InitSubSystem(SDL_INIT_VIDEO);
+    gfxInitFrameClock();
 
     flags = SDL_WINDOW_OPENGL;
 
@@ -98,14 +181,14 @@ void gfxInit(void)
 
     gfxSetGC(NULL);
 
-    /* diese RP mÅssen nur ein Bild maximaler Grî·e aufnehmen kînnen */
-    /* in anderen Modulen wird vorausgesetzt, da· alle RastPorts gleich */
-    /* gro· sind und auch gleich gro· wie die StdBuffer sind */
+    /* diese RP mÔøΩssen nur ein Bild maximaler GrÔøΩÔøΩe aufnehmen kÔøΩnnen */
+    /* in anderen Modulen wird vorausgesetzt, daÔøΩ alle RastPorts gleich */
+    /* groÔøΩ sind und auch gleich groÔøΩ wie die StdBuffer sind */
     /* StdBuffer = 61 * 1024 = 62464, Mem: 62400 */
 
-    /* Ausnahme (nachtrÑglich) : der RefreshRP ist nur 320 * 140 Pixel gro·!! */
+    /* Ausnahme (nachtrÔøΩglich) : der RefreshRP ist nur 320 * 140 Pixel groÔøΩ!! */
 
-    gfxInitMemRastPort(&StdRP0InMem, SCREEN_WIDTH, SCREEN_HEIGHT); /* CMAP mu· auch Platz haben ! */
+    gfxInitMemRastPort(&StdRP0InMem, SCREEN_WIDTH, SCREEN_HEIGHT); /* CMAP muÔøΩ auch Platz haben ! */
     gfxInitMemRastPort(&StdRP1InMem, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     gfxInitMemRastPort(&AnimRPInMem, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -114,7 +197,7 @@ void gfxInit(void)
 
     gfxInitMemRastPort(&LSFloorRPInMem, SCREEN_WIDTH, 32);
 
-    /* der RefreshRP mu· den ganzen Bildschirm aufnehmen kînnen */
+    /* der RefreshRP muÔøΩ den ganzen Bildschirm aufnehmen kÔøΩnnen */
     gfxInitMemRastPort(&RefreshRPInMem, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     gfxInitMemRastPort(&ScratchRP, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -606,7 +689,7 @@ void gfxSetFont(GC *gc, Font *font)
     gc->font = font;
 }
 
-/* berechnet die LÑnge eines Textes in Pixel */
+/* berechnet die LÔøΩnge eines Textes in Pixel */
 U16 gfxTextWidth(GC *gc, const char *txt, size_t len)
 {
     size_t w;
@@ -673,9 +756,9 @@ void gfxPrepareColl(U16 collId)
 
 	/*
          * coll->prepared wird nicht mit dem ScratchRP initialisert, da
-	 * es sonst zu Inkonsistenzen kommen kînnte. Collections im Scratch
-	 * werden als nicht vorbereitet betrachtet, da der ScratchRP stÑndig
-	 * durch andere Bilder Åberschrieben wird
+	 * es sonst zu Inkonsistenzen kommen kÔøΩnnte. Collections im Scratch
+	 * werden als nicht vorbereitet betrachtet, da der ScratchRP stÔøΩndig
+	 * durch andere Bilder ÔøΩberschrieben wird
          */
         coll->prepared = NULL;
     }
@@ -975,28 +1058,48 @@ static GC *gfxGetGC(S32 l_DestY)
     return gc;
 }
 
-static Uint32 timeLeft(Uint32 interval)
-{
-    static Uint32 next_time = 0;
-    Uint32 now;
-
-    now = SDL_GetTicks();
-    if (next_time <= now) {
-	next_time = now + interval;
-	return (0);
-    }
-    return (next_time - now);
-}
-
-
 void gfxWaitTOF(void)
 {
-    SDL_Delay(timeLeft(40));
+    Uint64 now;
+    Uint64 elapsedCounts;
+    double elapsedMs;
+
+    gfxInitFrameClock();
+
+    now = SDL_GetPerformanceCounter();
+    elapsedCounts = now - FrameTimer.lastCounter;
+
+    if (elapsedCounts < FrameTimer.targetFrameCounts) {
+        double remainingMs =
+            (double) (FrameTimer.targetFrameCounts - elapsedCounts) * 1000.0 /
+            (double) FrameTimer.perfFreq;
+        Uint32 delayMs = 0;
+
+        if (remainingMs > 1.0)
+            delayMs = (Uint32) remainingMs;
+        else if (remainingMs > 0.0)
+            delayMs = 1;
+
+        if (delayMs)
+            SDL_Delay(delayMs);
+
+        now = SDL_GetPerformanceCounter();
+        elapsedCounts = now - FrameTimer.lastCounter;
+    }
+
+    elapsedMs = (double) elapsedCounts * 1000.0 /
+        (double) FrameTimer.perfFreq;
+
+    if (elapsedMs > FrameTimer.simulationTickMs * 8.0)
+        elapsedMs = FrameTimer.simulationTickMs * 8.0;
+
+    FrameTimer.deltaMs = elapsedMs;
+    FrameTimer.lastCounter = now;
 }
 
 void gfxWaitTOR(void)
 {
-    SDL_Delay(timeLeft(20));
+    SDL_Delay(20);
 }
 
 void gfxWaitTOS(void)
@@ -1321,8 +1424,8 @@ void gfxILBMToRAW(const U8 *src, U8 *dst, size_t size)
 		pic = pic1;	/* Anfang der aktuellen Zeile */
 		b = ((w + 15) & 0xfff0);
 		do {
-		    a = *sp;	/* Kommando (wiederholen oder Åbernehmen */
-		    sp++;	/* nÑchstes Zeichen */
+		    a = *sp;	/* Kommando (wiederholen oder ÔøΩbernehmen */
+		    sp++;	/* nÔøΩchstes Zeichen */
 		    if (a > 128) {	/* Zeichen wiederholen */
 
 			a = 257 - a;
@@ -1334,7 +1437,7 @@ void gfxILBMToRAW(const U8 *src, U8 *dst, size_t size)
 			    pic += 8;
 			    b -= 8;
 			}
-		    } else {	/* Zeichen Åbernehmen */
+		    } else {	/* Zeichen ÔøΩbernehmen */
 
 			for (x = 0; x <= a; x++) {
 			    y = *sp;
@@ -1655,9 +1758,19 @@ void ShowIntro(void)
                 gfxScreenThaw(&ScreenGC, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 
-	        for (s=0; s<rate[anims]; s++) {
+            {
+                /* Blend original 40 ms tick pacing with modern 60 Hz frame pacing */
+                const double legacyTickMs = FrameTimer.simulationTickMs;
+                const double modernFrameMs = FrameTimer.targetFrameMs;
+                const double blendedFrameMs = (legacyTickMs + modernFrameMs) * 0.5;
+                double targetMs = (double) rate[anims] * blendedFrameMs;
+                double elapsedMs = 0.0;
+
+                while (elapsedMs < targetMs) {
                     gfxWaitTOF();
-	        }
+                    elapsedMs += gfxGetFrameDeltaMs();
+                }
+            }
 
 
                 if (showA) {

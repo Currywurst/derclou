@@ -34,16 +34,16 @@
 #define	Y_DEST_OFFSET_POS	UINT16_C(10)
 #define	PLAY_MODE_POS		UINT16_C(11)
 
-/* Defines fÅr Playmode */
+/* Defines fÔøΩr Playmode */
 #define	PM_NORMAL			     1
 #define	PM_PING_PONG		     2
 #define  PM_SYNCHRON            4
 
-/* Defines fÅr AnimPic Aufbau */
+/* Defines fÔøΩr AnimPic Aufbau */
 #define 	Y_OFFSET		           0	/* 1 Pixel zwischen 2 Reihen */
 
 struct AnimHandler {
-    char *RunningAnimID;	/* Anim, die gerade lÑuft */
+    char *RunningAnimID;	/* Anim, die gerade lÔøΩuft */
 
     U16 destX;
     U16 destY;
@@ -64,7 +64,7 @@ struct AnimHandler {
 
     U16 AnimCollection;	/* einzelnen Animphasen */
 
-    U32 WaitCounter;
+	double WaitCounter;
 
     U16 CurrPictNr;
     S16 Direction;
@@ -208,7 +208,7 @@ void PlayAnim(char *AnimID, U16 how_often, U32 mode)
 	    Handler.Direction = 1;
 	    Handler.RepeatationCount = 0;
 
-	    Handler.WaitCounter = 1;
+		Handler.WaitCounter = 1.0;
 
 	    /* DoAnim ist ready to play and our anim is decrunched */
 	    strcpy(Handler.RunningAnimID, AnimID);
@@ -278,9 +278,15 @@ void animator(void)
     if (!(Handler.AnimatorState & ANIM_STATE_SUSPENDED)) {
 	if (Handler.RunningAnimID && Handler.RunningAnimID[0] != '\0') {
 	    if (Handler.RepeatationCount <= Handler.Repeatation) {
-		if ((--Handler.WaitCounter) == 0) {
-		    Handler.WaitCounter =
-			Handler.PictureRate + CalcRandomNr(0, 3);
+		double ticks = gfxGetFrameDeltaTicks();
+
+		Handler.WaitCounter -= ticks;
+
+		while (Handler.WaitCounter <= 0.0) {
+		    double nextWait =
+			(double) Handler.PictureRate +
+			(double) CalcRandomNr(0, 3);
+		    Handler.WaitCounter += nextWait;
 
 		    if (Handler.CurrPictNr == 0) {
 			Handler.RepeatationCount++;
@@ -313,7 +319,7 @@ void animator(void)
                         else
                             sourceY = 0;
 
-			/* sicherstellen, da· Animframes immer vorhanden sind */
+			/* sicherstellen, daÔøΩ Animframes immer vorhanden sind */
 
 			inpMousePtrOff();
 

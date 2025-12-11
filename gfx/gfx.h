@@ -38,7 +38,7 @@
 
 typedef enum {
     GFX_JAM_1               = 0,    /* Hintergrund wird gleichbelassen */
-    GFX_JAM_2               = 1	    /* Hintergrund wird mit BackPen Åbermalt */
+    GFX_JAM_2               = 1	    /* Hintergrund wird mit BackPen ÔøΩbermalt */
 } GfxDrawModeE;
 
 /* defines for Show */
@@ -221,6 +221,10 @@ void gfxWaitTOF(void);
 void gfxWaitTOR(void);
 void gfxWaitTOS(void);
 
+void gfxSetFrameRate(U32 fps);
+double gfxGetFrameDeltaMs(void);
+double gfxGetFrameDeltaTicks(void);
+double gfxGetSimulationTickMs(void);
 void gfxRAWBlit(U8 * sp, U8 * dp, const int x1, const int y1, const int x2,
 		const int y2, const int w, const int h, const int sw,
 		const int dw);
