@@ -55,7 +55,7 @@ void DrawPresent(LIST * present, U8 firstLine, GC *gc, U8 max)
 
 	switch (p->presentHow) {
 	case PRESENT_AS_TEXT:
-	    if (p->extendedText) {
+	    if (p->extendedText[0] != EOS) {
 		for (k = 0;
 		     k <
 		     (57 - strlen(NODE_NAME(p)) - strlen(p->extendedText)); k++)
@@ -162,7 +162,7 @@ U8 Present(U32 nr, char *presentationText,
 		gfxGetMouseXY(u_gc, NULL, &y);
 	    }
 
-	    while (y > 50 && y <= 59 && firstVis < (max - 5)) {	/* Scroll down */
+	    while (y > 50 && y <= 59 && firstVis < (max - NRBLINES)) {	/* Scroll down */
 		firstVis++;
 		DrawPresent(presentationData, firstVis, u_gc, max);
 
@@ -178,8 +178,8 @@ U8 Present(U32 nr, char *presentationText,
 		}
 	    }
 
-	    if ((action & INP_DOWN)) {
-		if ((max - NRBLINES > 0) && (firstVis < (max - NRBLINES))) {
+		if ((action & INP_DOWN)) {
+		    if ((max > NRBLINES) && (firstVis < (max - NRBLINES))) {
 		    firstVis++;
 		    DrawPresent(presentationData, firstVis, u_gc, max);
 		}
@@ -213,6 +213,12 @@ static struct presentationInfo *AddPresentInfo(LIST * l, U32 max,
 					       sizeof(struct presentationInfo),
 					       name);
 
+	if (!p)
+	    return NULL;
+
+	p->extendedText[0] = EOS;
+	p->extendedNr = 0;
+	p->presentHow = PRESENT_AS_TEXT;
     p->maxNr = max;
     return p;
 }
@@ -223,6 +229,8 @@ void AddPresentTextLine(LIST * l, const char *data, U32 max, LIST * texts,
     struct presentationInfo *p;
 
     p = AddPresentInfo(l, max, texts, textNr);
+	if (!p)
+	    return;
     p->presentHow = PRESENT_AS_TEXT;
 
     if (data)
@@ -238,6 +246,8 @@ void AddPresentLine(LIST * l, U8 presentHow, U32 data, U32 max,
     struct presentationInfo *p;
 
     p = AddPresentInfo(l, max, texts, textNr);
+	if (!p)
+	    return;
     p->presentHow = presentHow;
 
     if (presentHow == PRESENT_AS_TEXT)

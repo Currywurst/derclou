@@ -199,7 +199,7 @@ void StdInit(void)
     if (sc->LocationNr == GetLocation)
 	sameLocation = 1;
 
-    if ((sc->LocationNr != -1UL) && (GetLocation != sc->LocationNr))
+	if ((sc->LocationNr != (U32) - 1) && (GetLocation != sc->LocationNr))
 	SetLocation(sc->LocationNr);
 
     tcRefreshLocationInTitle(sc->LocationNr);
@@ -239,11 +239,7 @@ void tcPlaySound()
 	    sndPlaySound("hotel.bk", 0);
 	    break;
 	case SCENE_GARAGE:
-	    sndPlaySound("cars.bk", 0);
-	    break;
 	case SCENE_PARKING:
-	    sndPlaySound("cars.bk", 0);
-	    break;
 	case SCENE_CARS_OFFICE:
 	    sndPlaySound("cars.bk", 0);
 	    break;
@@ -322,9 +318,9 @@ void tcPlayStreetSound()
 	    static ubyte counter = 0;
 	    bool noStreetMusic = false;
 
-	    if (strcmp(sndGetCurrSoundName(), "street1.bk") &&
-	        strcmp(sndGetCurrSoundName(), "street2.bk") &&
-	        strcmp(sndGetCurrSoundName(), "street3.bk"))
+	    if ((strcmp(sndGetCurrSoundName(), "street1.bk") != 0) &&
+	        (strcmp(sndGetCurrSoundName(), "street2.bk") != 0) &&
+	        (strcmp(sndGetCurrSoundName(), "street3.bk") != 0))
 	        noStreetMusic = true;
 
 	    if (!counter || noStreetMusic) {
@@ -459,11 +455,11 @@ U32 StdHandle(U32 choice)
 			sndStopSound(0);
 
 		    if ((building = tcOrganisation())) {
-			AddVTime(27153);	/* etwas Åber 15 Tage ! */
+			AddVTime(27153);	/* etwas ÔøΩber 15 Tage ! */
 
 			succ_eventnr = tcBurglary(building);
 		    } else {
-			AddVTime(443);	/* etwas Åber 7 Stunden */
+			AddVTime(443);	/* etwas ÔøΩber 7 Stunden */
 
 			CurrentBackground = BGD_LONDON;
 			ShowMenuBackground();
@@ -559,7 +555,7 @@ void StdDone(void)
 
 void InitTaxiLocations(void)
 {
-    RemRelation(Relation_taxi);	/* alle Relationen lîschen! */
+    RemRelation(Relation_taxi);	/* alle Relationen lÔøΩschen! */
     AddRelation(Relation_taxi);
 
     if (GamePlayMode & GP_STORY_OFF) {
@@ -755,7 +751,7 @@ void tcPersonGreetsMatt(void)
     static U32 upper = 4L;
     U32 locNr;
 
-    if (CalcRandomNr(0L, upper) == 1) {	/* alle upper mal wird Matt gegrÅ·t ! */
+    if (CalcRandomNr(0L, upper) == 1) {	/* alle upper mal wird Matt gegrÔøΩÔøΩt ! */
 	if (CalcRandomNr(0L, 4L) == 1)	/* alle 4 mal */
 	    upper += 2;		/* wahrscheinlichkeit wird kleiner ! */
 

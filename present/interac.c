@@ -129,7 +129,7 @@ static char SearchMouseActiv(U32 possibility, ubyte max)
     if ((y > TXT_1ST_MENU_LINE_Y - 10) && (y < TXT_2ND_MENU_LINE_Y + 10)) {
 	max -= 1;
 
-	for (activ = 0; (x >= MenuCoords[activ]) && (activ < max / 2 + 1);
+	for (activ = 0; (activ < max / 2 + 1) && (x >= MenuCoords[activ]);
 	     activ++);
 
 	activ = (activ - 1) * 2;
@@ -360,22 +360,15 @@ static void DrawBubble(LIST * bubble, U8 firstLine, U8 activ, GC *gc, U32 max)
 	} else {
 	    line = line + 1;
 
-	    if (activ == i)
-		gfxSetPens(gc, BG_ACTIVE_COLOR, GFX_SAME_PEN,
-			   GFX_SAME_PEN);
-	    else
-		gfxSetPens(gc, BG_INACTIVE_COLOR, GFX_SAME_PEN,
-			   GFX_SAME_PEN);
+	    uword bgColor =
+		(activ == i) ? BG_ACTIVE_COLOR : BG_INACTIVE_COLOR;
+	    uword vgColor =
+		(activ == i) ? VG_ACTIVE_COLOR : VG_INACTIVE_COLOR;
 
+	    gfxSetPens(gc, bgColor, GFX_SAME_PEN, GFX_SAME_PEN);
 	    gfxPrintExact(gc, line, X_OFFSET + 1, j + 1);
 
-	    if (activ == i)
-		gfxSetPens(gc, VG_ACTIVE_COLOR, GFX_SAME_PEN,
-			   GFX_SAME_PEN);
-	    else
-		gfxSetPens(gc, VG_INACTIVE_COLOR, GFX_SAME_PEN,
-			   GFX_SAME_PEN);
-
+	    gfxSetPens(gc, vgColor, GFX_SAME_PEN, GFX_SAME_PEN);
 	    gfxPrintExact(gc, line, X_OFFSET, j);
 	}
     }

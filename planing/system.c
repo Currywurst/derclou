@@ -23,7 +23,7 @@
 #define FILE_ACTION_LIST_ID "ACLI"	/* ACtionLIst for handler x started */
 #define FILE_ACTION_ID      "ACTI"	/* ACTIon */
 
-#define SYS_MAX_MEMORY_SIZE   1024L*25L
+#define SYS_MAX_MEMORY_SIZE   (1024L * 25L)
 
 #include "planing/system.h"
 
@@ -42,6 +42,16 @@ size_t sizeofAction[] = {
     sizeof(struct ActionClose),
     sizeof(struct ActionControl)
 };
+
+static void sysFreeHandlerActions(struct Handler *h)
+{
+	if (!h || !h->Actions)
+		return;
+
+	CorrectMem(h->Actions);
+	RemoveList(h->Actions);
+	h->Actions = NULL;
+}
 
 size_t plGetUsedMem(void)
 {
@@ -152,17 +162,16 @@ LIST *LoadSystem(FILE * fh, struct System *sys)
     } else {
 	LIST *extList = NULL;
 	NODE *n;
+	U32 missingHandlers = (handlerNr > knowsSomebody) ?
+	    (U32) (handlerNr - knowsSomebody) : 0;
 
 	if (knowsSomebody == 1)
 	    extList = txtGoKey(PLAN_TXT, "SYSTEM_GUYS_MISSING_3");
-	else {
-	    if ((handlerNr - knowsSomebody) > 1)
-		extList =
-		    txtGoKeyAndInsert(PLAN_TXT, "SYSTEM_GUYS_MISSING_2",
-				      (U32) (handlerNr - knowsSomebody));
-	    else if (handlerNr - knowsSomebody)
-		extList = txtGoKey(PLAN_TXT, "SYSTEM_GUYS_MISSING_4");
-	}
+	else if (missingHandlers > 1)
+	    extList = txtGoKeyAndInsert(PLAN_TXT, "SYSTEM_GUYS_MISSING_2",
+			     missingHandlers);
+	else if (missingHandlers == 1)
+	    extList = txtGoKey(PLAN_TXT, "SYSTEM_GUYS_MISSING_4");
 
 	if (extList) {
 	    for (n = LIST_HEAD(extList); NODE_SUCC(n); n = NODE_SUCC(n))
@@ -205,10 +214,7 @@ void CloseHandler(struct System *sys, U32 id)
     register struct Handler *h;
 
     if ((h = FindHandler(sys, id))) {
-	CorrectMem(h->Actions);
-
-	if (h->Actions)
-	    RemoveList(h->Actions);
+        sysFreeHandlerActions(h);
 
 	RemNode(h);
 	FreeNode(h);
@@ -220,10 +226,7 @@ struct Handler *ClearHandler(struct System *sys, U32 id)
     register struct Handler *h;
 
     if ((h = FindHandler(sys, id))) {
-	CorrectMem(h->Actions);
-
-	if (h->Actions)
-	    RemoveList(h->Actions);
+        sysFreeHandlerActions(h);
 
 	if (!(h->Actions = CreateList())) {
 	    RemNode(h);

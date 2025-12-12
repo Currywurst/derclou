@@ -74,7 +74,7 @@ void tcDisplayCommon(void)
     gfxSetGC(l_gc);
     gfxShow(ORG_PICT_ID, GFX_ONE_STEP | GFX_NO_REFRESH, 0, -1, -1);
 
-    /* Geb„ude anzeigen  */
+    /* Gebï¿½ude anzeigen  */
 
     gfxSetFont(l_gc, menuFont);
     gfxSetDrMd(l_gc, GFX_JAM_1);
@@ -82,11 +82,12 @@ void tcDisplayCommon(void)
 
     gfxSetPens(l_gc, 249, 254, GFX_SAME_PEN);
 
-    if (Organisation.BuildingID) {
-	building = (Building) dbGetObject(Organisation.BuildingID);
+    if (Organisation.BuildingID)
+        building = (Building) dbGetObject(Organisation.BuildingID);
 
-	dbGetObjectName(Organisation.BuildingID, line);
-	gfxPrint(l_gc, line, 9, GFX_PRINT_CENTER | GFX_PRINT_SHADOW);
+    if (Organisation.BuildingID && building) {
+        dbGetObjectName(Organisation.BuildingID, line);
+        gfxPrint(l_gc, line, 9, GFX_PRINT_CENTER | GFX_PRINT_SHADOW);
     }
 
 
@@ -146,7 +147,7 @@ void tcDisplayCommon(void)
     gfxSetRect(0, 106);
     strcpy(line, NODE_NAME(GetNthNode(texts, 3L)));
 
-    if (Organisation.BuildingID) {
+    if (Organisation.BuildingID && building) {
 	LIST *enums = txtGoKey(OBJECTS_ENUM_TXT, "enum_RouteE");
 
 	strcpy(name, NODE_NAME(GetNthNode(enums, building->EscapeRoute)));
@@ -159,13 +160,13 @@ void tcDisplayCommon(void)
     gfxPrint(l_gc, line, 35, GFX_PRINT_LEFT);
 
 	/*************************************************************
-	 *  Fluchtweg-l„nge
+	 *  Fluchtweg-lï¿½nge
 	 */
 
     gfxSetRect(106, 106);
     strcpy(line, NODE_NAME(GetNthNode(texts, 4L)));
 
-    if (Organisation.BuildingID) {
+    if (Organisation.BuildingID && building) {
 	sprintf(name, "%d (km)", building->EscapeRouteLength);
 	strcat(line, name);
     } else

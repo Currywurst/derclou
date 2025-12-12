@@ -171,7 +171,7 @@ struct ActionControl {
 };
 
 
-#define ActionData(ac,type)      ((type)(ac+1))
+#define ActionData(ac,type)      ((type)(((ac) + 1)))
 
 struct Action *InitAction(struct System *sys, uword type, U32 data1, U32 data2,
 			  U32 time);

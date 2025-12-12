@@ -86,14 +86,16 @@ LIST *plLoadTools(FILE * fh)
 	LIST *extList = NULL;
 	NODE *n;
 
+	U32 missingTools = (toolsNr > canGet) ? (toolsNr - canGet) : 0;
+
 	if (canGet == 2)
 	    extList = txtGoKey(PLAN_TXT, "SYSTEM_TOOLS_MISSING_3");
 	else {
-	    if ((toolsNr - canGet) > 1)
+	    if (missingTools > 1)
 		extList =
 		    txtGoKeyAndInsert(PLAN_TXT, "SYSTEM_TOOLS_MISSING_2",
-				      (U32) (toolsNr - canGet));
-	    else if (toolsNr - canGet)
+			      missingTools);
+	    else if (missingTools == 1)
 		extList = txtGoKey(PLAN_TXT, "SYSTEM_TOOLS_MISSING_4");
 	}
 
@@ -123,7 +125,10 @@ ubyte plOpen(U32 objId, ubyte mode, FILE ** fh)
 	    name1[TXT_KEY_LENGTH], name2[TXT_KEY_LENGTH], exp[TXT_KEY_LENGTH];
 
 	dbGetObjectName(lsGetActivAreaID(), name1);
-	name1[strlen(name1) - 1] = '\0';
+	size_t areaLen = strlen(name1);
+	if (!areaLen)
+	    return PLANING_OPEN_ERR_NO_PLAN;
+	name1[areaLen - 1] = '\0';
 
 	/* MOD 25-04-94 HG - new paths on pc */
 	sprintf(name2, "%s%s", name1, PLANING_PLAN_LIST_EXTENSION);
@@ -178,7 +183,12 @@ ubyte plOpen(U32 objId, ubyte mode, FILE ** fh)
 			i = data->io_Data;
 
 		    dbGetObjectName(lsGetActivAreaID(), name1);
-		    name1[strlen(name1) - 1] = '\0';
+		    size_t nameLen = strlen(name1);
+		    if (!nameLen) {
+			RemoveList(PlanList);
+			return PLANING_OPEN_ERR_NO_PLAN;
+		    }
+		    name1[nameLen - 1] = '\0';
 
 		    sprintf(name2, "%s%d%s", name1, i + 1,
 			    PLANING_PLAN_EXTENSION);

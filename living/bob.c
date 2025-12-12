@@ -74,12 +74,18 @@ void BobDone(uword BobID)
 {
     struct Bob *bob = GetNthBob(BobID);
 
+    if (!bob)
+        return;
+
     bob->flags = 0;
 }
 
 ubyte BobSet(uword BobID, uword xdst, uword ydst, uword xsrc, uword ysrc)
 {
     struct Bob *bob = GetNthBob(BobID);
+
+    if (!bob)
+        return 0;
 
     bob->xsrc = xsrc;
     bob->ysrc = ysrc;
@@ -95,6 +101,9 @@ void BobVis(uword BobID)
 {
     struct Bob *bob = GetNthBob(BobID);
 
+    if (!bob)
+        return;
+
     bob->flags |= BOB_VISIBLE;
 
     gfxNCH4Refresh();
@@ -103,6 +112,9 @@ void BobVis(uword BobID)
 void BobInVis(uword BobID)
 {
     struct Bob *bob = GetNthBob(BobID);
+
+    if (!bob)
+        return;
 
     bob->flags &= ~BOB_VISIBLE;
 

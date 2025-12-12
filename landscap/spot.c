@@ -38,35 +38,35 @@ struct SpotControl {
     MemRastPort RP;
 };
 
-static struct SpotControl *sc = NULL;
+static struct SpotControl *gSpotControl = NULL;
 
 void lsInitSpots(void)
 {
-    if (sc)
+    if (gSpotControl)
 	lsDoneSpots();
 
-    sc = TCAllocMem(sizeof(*sc), 0);
+    gSpotControl = TCAllocMem(sizeof(*gSpotControl), 0);
 
-    sc->p_spots = CreateList();
+    gSpotControl->p_spots = CreateList();
 
-    gfxInitMemRastPort(&sc->RP, LS_SPOT_BITMAP_WIDTH, LS_SPOT_BITMAP_HEIGHT);
+    gfxInitMemRastPort(&gSpotControl->RP, LS_SPOT_BITMAP_WIDTH, LS_SPOT_BITMAP_HEIGHT);
 
-    lsLoadSpotBitMap(&sc->RP);
+    lsLoadSpotBitMap(&gSpotControl->RP);
 }
 
 void lsDoneSpots(void)
 {
-    if (sc) {
+    if (gSpotControl) {
 	lsFreeAllSpots();
 
-	RemoveList(sc->p_spots);
+	RemoveList(gSpotControl->p_spots);
 
-        gfxDoneMemRastPort(&sc->RP);
+        gfxDoneMemRastPort(&gSpotControl->RP);
 
-	TCFreeMem(sc, sizeof(*sc));
+	TCFreeMem(gSpotControl, sizeof(*gSpotControl));
     }
 
-    sc = NULL;
+    gSpotControl = NULL;
 }
 
 static S32 lsIsSpotVisible(struct Spot *spot)
@@ -81,7 +81,7 @@ void lsMoveAllSpots(U32 time)
 {
     struct Spot *spot;
 
-    for (spot = (struct Spot *) LIST_HEAD(sc->p_spots); NODE_SUCC(spot);
+    for (spot = (struct Spot *) LIST_HEAD(gSpotControl->p_spots); NODE_SUCC(spot);
 	 spot = (struct Spot *) NODE_SUCC(spot))
 	if (spot->us_PosCount > 1)
 	    if (lsIsSpotVisible(spot))
@@ -94,7 +94,7 @@ void lsShowAllSpots(U32 time, U32 mode)
 {
     struct Spot *spot;
 
-    for (spot = (struct Spot *) LIST_HEAD(sc->p_spots); NODE_SUCC(spot);
+    for (spot = (struct Spot *) LIST_HEAD(gSpotControl->p_spots); NODE_SUCC(spot);
 	 spot = (struct Spot *) NODE_SUCC(spot)) {
 	if (lsIsLSObjectInActivArea(dbGetObject(spot->ul_CtrlObjId))) {	/* wenn der Steuerkasten in dieser Area -> */
 	    if (mode & LS_ALL_VISIBLE_SPOTS)
@@ -247,12 +247,12 @@ struct Spot *lsAddSpot(uword us_Size, uword us_Speed, U32 ul_CtrlObjId)
     U32 SpotNr;
     char line[TXT_KEY_LENGTH];
 
-    SpotNr = GetNrOfNodes(sc->p_spots);
+    SpotNr = GetNrOfNodes(gSpotControl->p_spots);
 
     sprintf(line, "*%s%" PRIu32, LS_SPOT_NAME, SpotNr);
 
     spot =
-	(struct Spot *) CreateNode(sc->p_spots, sizeof(*spot), line);
+	(struct Spot *) CreateNode(gSpotControl->p_spots, sizeof(*spot), line);
 
     spot->us_Size = us_Size;
     spot->us_Speed = us_Speed;
@@ -277,7 +277,7 @@ void lsSetSpotStatus(U32 CtrlObjId, ubyte uch_Status)
 {
     struct Spot *s;
 
-    for (s = (struct Spot *) LIST_HEAD(sc->p_spots); NODE_SUCC(s);
+    for (s = (struct Spot *) LIST_HEAD(gSpotControl->p_spots); NODE_SUCC(s);
 	 s = (struct Spot *) NODE_SUCC(s))
 	if (s->ul_CtrlObjId == CtrlObjId)
 	    s->uch_Status = uch_Status;
@@ -371,8 +371,8 @@ void lsLoadSpots(U32 bldId, char *uch_FileName)
 	    lsAddSpotPosition(spot, XPos, YPos);
 	}
 
-	if (!(LIST_EMPTY(sc->p_spots)))
-	    spot->p_CurrPos = (struct SpotPosition *) LIST_HEAD(sc->p_spots);
+	if (!(LIST_EMPTY(gSpotControl->p_spots)))
+	    spot->p_CurrPos = (struct SpotPosition *) LIST_HEAD(gSpotControl->p_spots);
     }
 
     dskClose(file);
@@ -382,19 +382,19 @@ void lsFreeAllSpots(void)
 {
     struct Spot *spot;
 
-    for (spot = (struct Spot *) LIST_HEAD(sc->p_spots); NODE_SUCC(spot);
+    for (spot = (struct Spot *) LIST_HEAD(gSpotControl->p_spots); NODE_SUCC(spot);
 	 spot = (struct Spot *) NODE_SUCC(spot))
 	RemoveList(spot->p_positions);
 }
 
 struct Spot *lsGetSpot(char *uch_Name)
 {
-    return ((struct Spot *) GetNode(sc->p_spots, uch_Name));
+    return ((struct Spot *) GetNode(gSpotControl->p_spots, uch_Name));
 }
 
 LIST *lsGetSpotList(void)
 {
-    return (sc->p_spots);
+    return (gSpotControl->p_spots);
 }
 
 void lsBlitSpot(uword us_Size, uword us_XPos, uword us_YPos, ubyte visible)
@@ -413,7 +413,7 @@ void lsBlitSpot(uword us_Size, uword us_XPos, uword us_YPos, ubyte visible)
     }
 
     if (visible)
-        gfxLSPutSet(&sc->RP, sourceX, 0, us_XPos, us_YPos, us_Size, us_Size);
+        gfxLSPutSet(&gSpotControl->RP, sourceX, 0, us_XPos, us_YPos, us_Size, us_Size);
     else
-        gfxLSPutClr(&sc->RP, sourceX, 0, us_XPos, us_YPos, us_Size, us_Size);
+        gfxLSPutClr(&gSpotControl->RP, sourceX, 0, us_XPos, us_YPos, us_Size, us_Size);
 }

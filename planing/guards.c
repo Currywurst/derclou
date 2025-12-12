@@ -44,7 +44,10 @@ ubyte grdInit(FILE ** fh, char *mode, U32 bldId, U32 areaId)
     char bldName[TXT_KEY_LENGTH], fileName[DSK_PATH_MAX];
 
     dbGetObjectName(areaId, fileName);
-    fileName[strlen(fileName) - 1] = '\0';
+	size_t nameLen = strlen(fileName);
+	if (!nameLen)
+	    return 0;
+	fileName[nameLen - 1] = '\0';
     sprintf(bldName, "%s%s", fileName, GUARD_EXTENSION);
 
     dskBuildPathName(DISK_CHECK_FILE, GUARD_DIRECTORY, bldName, fileName);

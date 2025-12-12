@@ -760,7 +760,6 @@ void gfxPrepareColl(U16 collId)
 	 * werden als nicht vorbereitet betrachtet, da der ScratchRP st�ndig
 	 * durch andere Bilder �berschrieben wird
          */
-        coll->prepared = NULL;
     }
 }
 
@@ -899,13 +898,11 @@ void gfxPrintExact(GC *gc, const char *txt, U16 x, U16 y)
 
     area.x = gc->clip.x;
     area.y = gc->clip.y;
-    area.w = gc->clip.w;
-    area.h = gc->clip.h;
+    area.w = min(gc->clip.w, len * w);
+    area.h = min(gc->clip.h, h);
 
     area.x += x;
     area.y += y;
-    area.w = len * w;
-    area.h = h;
 
     if (gc->mode == GFX_JAM_2)
 	SDL_FillRect(Screen, &area, gc->background);

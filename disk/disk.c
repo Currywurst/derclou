@@ -7,6 +7,7 @@
  ****************************************************************************/
 
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "error/error.h"
 
@@ -49,21 +50,44 @@ void *dskLoad(const char *Pathname)
     size = BUFSIZ;
     ptr  = malloc(size);
 
-    if ((fp = dskOpen(Pathname, "rb"))) {
-        size_t nread;
+    if (!ptr)
+        return NULL;
 
-        while ((nread = fread(ptr+pos, 1, BUFSIZ, fp)) == BUFSIZ) {
+    if ((fp = dskOpen(Pathname, "rb"))) {
+        size_t nread = 0;
+
+        while ((nread = fread(ptr + pos, 1, BUFSIZ, fp)) == BUFSIZ) {
+            U8 *tmp;
+
             pos  += nread;
-            ptr   = realloc(ptr, size+BUFSIZ);
+            tmp   = realloc(ptr, size + BUFSIZ);
+            if (!tmp) {
+                free(ptr);
+                dskClose(fp);
+                return NULL;
+            }
+
+            ptr  = tmp;
             size += nread;
         }
 
         pos += nread;
 
-        ptr = realloc(ptr, pos);
+        if (pos) {
+            U8 *tmp = realloc(ptr, pos);
+            if (!tmp) {
+                free(ptr);
+                dskClose(fp);
+                return NULL;
+            }
+            ptr = tmp;
+        }
+
         dskClose(fp);
-        return (void *)ptr;
+        return (void *) ptr;
     }
+
+    free(ptr);
     return NULL;
 }
 

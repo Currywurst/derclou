@@ -26,23 +26,23 @@ void livInit(uword us_VisLScapeX, uword us_VisLScapeY,
 	     uword us_TotalLScapeWidth, uword us_TotalLScapeHeight,
 	     ubyte uch_FrameCount, U32 ul_StartArea)
 {
-    sc = TCAllocMem(sizeof(*sc), 0);
+    gSpriteControl = TCAllocMem(sizeof(*gSpriteControl), 0);
 
-    sc->p_Livings = CreateList();
-    sc->p_Template = CreateList();
+    gSpriteControl->p_Livings = CreateList();
+    gSpriteControl->p_Template = CreateList();
 
-    sc->us_VisLScapeX = us_VisLScapeX;
-    sc->us_VisLScapeY = us_VisLScapeY;
+    gSpriteControl->us_VisLScapeX = us_VisLScapeX;
+    gSpriteControl->us_VisLScapeY = us_VisLScapeY;
 
-    sc->us_VisLScapeWidth = us_VisLScapeWidth;
-    sc->us_VisLScapeHeight = us_VisLScapeHeight;
+    gSpriteControl->us_VisLScapeWidth = us_VisLScapeWidth;
+    gSpriteControl->us_VisLScapeHeight = us_VisLScapeHeight;
 
-    sc->us_TotalLScapeWidth = us_TotalLScapeWidth;
-    sc->us_TotalLScapeHeight = us_TotalLScapeHeight;
+    gSpriteControl->us_TotalLScapeWidth = us_TotalLScapeWidth;
+    gSpriteControl->us_TotalLScapeHeight = us_TotalLScapeHeight;
 
     livSetActivAreaId(ul_StartArea);
 
-    sc->uch_FrameCount = uch_FrameCount;
+    gSpriteControl->uch_FrameCount = uch_FrameCount;
 
     livLoadTemplates();		/* load all anim phases (frames) */
 
@@ -53,39 +53,39 @@ void livInit(uword us_VisLScapeX, uword us_VisLScapeY,
 
 void livDone(void)
 {
-    if (sc) {
-	if (sc->p_Livings) {
+    if (gSpriteControl) {
+	if (gSpriteControl->p_Livings) {
 	    NODE *node;
 
-	    for (node = (NODE *) LIST_HEAD(sc->p_Livings); NODE_SUCC(node);
+	    for (node = (NODE *) LIST_HEAD(gSpriteControl->p_Livings); NODE_SUCC(node);
 		 node = (NODE *) NODE_SUCC(node))
 		livRem((struct Living *) node);
 
-	    RemoveList(sc->p_Livings);
-	    sc->p_Livings = NULL;
+	    RemoveList(gSpriteControl->p_Livings);
+	    gSpriteControl->p_Livings = NULL;
 	}
 
-	if (sc->p_Template) {
+	if (gSpriteControl->p_Template) {
 	    NODE *node;
 
-	    for (node = (NODE *) LIST_HEAD(sc->p_Template); NODE_SUCC(node);
+	    for (node = (NODE *) LIST_HEAD(gSpriteControl->p_Template); NODE_SUCC(node);
 		 node = (NODE *) NODE_SUCC(node))
 		livRemTemplate((struct AnimTemplate *) node);
 
-	    RemoveList(sc->p_Template);
-	    sc->p_Template = NULL;
+	    RemoveList(gSpriteControl->p_Template);
+	    gSpriteControl->p_Template = NULL;
 	}
 
-	TCFreeMem(sc, sizeof(*sc));
+	TCFreeMem(gSpriteControl, sizeof(*gSpriteControl));
 
-	sc = NULL;
+	gSpriteControl = NULL;
     }
 }
 
 void livSetActivAreaId(U32 areaId)
 {
-    if (sc)
-	sc->ul_ActivAreaId = areaId;
+    if (gSpriteControl)
+	gSpriteControl->ul_ActivAreaId = areaId;
 }
 
 void livLivesInArea(char *uch_Name, U32 areaId)
@@ -105,8 +105,8 @@ void livSetAllInvisible(void)
 {
     struct Living *liv;
 
-    if (sc) {
-	for (liv = (struct Living *) LIST_HEAD(sc->p_Livings); NODE_SUCC(liv);
+    if (gSpriteControl) {
+	for (liv = (struct Living *) LIST_HEAD(gSpriteControl->p_Livings); NODE_SUCC(liv);
 	     liv = (struct Living *) NODE_SUCC(liv))
 	    livHide(liv);
     }
@@ -114,18 +114,18 @@ void livSetAllInvisible(void)
 
 void livSetPlayMode(U32 playMode)
 {
-    sc->ul_SprPlayMode = playMode;
+    gSpriteControl->ul_SprPlayMode = playMode;
 
-    if (sc->ul_SprPlayMode & LIV_PM_NORMAL) {
-	sc->uch_FirstFrame = 0;
-	sc->uch_LastFrame = sc->uch_FrameCount;
-	sc->ch_PlayDirection = 1;
+    if (gSpriteControl->ul_SprPlayMode & LIV_PM_NORMAL) {
+	gSpriteControl->uch_FirstFrame = 0;
+	gSpriteControl->uch_LastFrame = gSpriteControl->uch_FrameCount;
+	gSpriteControl->ch_PlayDirection = 1;
     }
 
-    if (sc->ul_SprPlayMode & LIV_PM_REVERSE) {
-	sc->uch_FirstFrame = sc->uch_FrameCount - 1;
-	sc->uch_LastFrame = (ubyte) - 1;
-	sc->ch_PlayDirection = (ubyte) - 1;
+    if (gSpriteControl->ul_SprPlayMode & LIV_PM_REVERSE) {
+	gSpriteControl->uch_FirstFrame = gSpriteControl->uch_FrameCount - 1;
+	gSpriteControl->uch_LastFrame = (ubyte) - 1;
+	gSpriteControl->ch_PlayDirection = -1;
     }
 }
 
@@ -163,8 +163,8 @@ void livAnimate(char *uch_Name, ubyte uch_Action, word s_XSpeed, word s_YSpeed)
 	liv->s_XSpeed = s_XSpeed;
 	liv->s_YSpeed = s_YSpeed;
 
-	if (((ubyte) liv->ch_CurrFrameNr == sc->uch_LastFrame))
-	    liv->ch_CurrFrameNr = (char) sc->uch_FirstFrame;
+	if (((ubyte) liv->ch_CurrFrameNr == gSpriteControl->uch_LastFrame))
+	    liv->ch_CurrFrameNr = (char) gSpriteControl->uch_FirstFrame;
     }
 }
 
@@ -180,7 +180,7 @@ void livStopAll(void)
 {
     struct Living *liv;
 
-    for (liv = (struct Living *) LIST_HEAD(sc->p_Livings);
+    for (liv = (struct Living *) LIST_HEAD(gSpriteControl->p_Livings);
 	 NODE_SUCC(liv); liv = (struct Living *) NODE_SUCC(liv)) {
 	if (liv->uch_Status == LIV_ENABLED)
 	    livAnimate(NODE_NAME(liv), ANM_STAND, 0, 0);
@@ -212,7 +212,7 @@ void livDoAnims(ubyte uch_Play, ubyte uch_Move)
 
     lsDoScroll();
 
-    for (liv = (struct Living *) LIST_HEAD(sc->p_Livings);
+    for (liv = (struct Living *) LIST_HEAD(gSpriteControl->p_Livings);
 	 NODE_SUCC(liv); liv = (struct Living *) NODE_SUCC(liv)) {
 	if (liv->uch_Status == LIV_ENABLED) {
 	    if (uch_Move) {
@@ -221,12 +221,12 @@ void livDoAnims(ubyte uch_Play, ubyte uch_Move)
 	    }
 
 	    /*
-	     * die View Direction muá hier gesetzt werden und NICHT
+	     * die View Direction muï¿½ hier gesetzt werden und NICHT
 	     * in AnimateLiving, da die Aktion in AnimateLiving nicht
-	     * stattfinden muá, die ViewDirection zwischenzeitlich
+	     * stattfinden muï¿½, die ViewDirection zwischenzeitlich
 	     * aber eine falschen Wert annimt, was z.B. im Planing
-	     * zu Fehler fhrt!
-	     * muá in jedem Fall geschehen, auch wenn Maxi unsichtbar ist
+	     * zu Fehler fï¿½hrt!
+	     * muï¿½ in jedem Fall geschehen, auch wenn Maxi unsichtbar ist
 	     */
 
 	    livCorrectViewDirection(liv);
@@ -237,9 +237,9 @@ void livDoAnims(ubyte uch_Play, ubyte uch_Move)
 		/* Action != ANM_STAND -> shitty exception because Marx
                    didn't provide a standing anim */
 		if ((uch_Play) && (liv->uch_Action != ANM_STAND))
-		    liv->ch_CurrFrameNr += (char) sc->ch_PlayDirection;
+		    liv->ch_CurrFrameNr += (char) gSpriteControl->ch_PlayDirection;
 
-		if ((ubyte) liv->ch_CurrFrameNr == sc->uch_LastFrame)
+		if ((ubyte) liv->ch_CurrFrameNr == gSpriteControl->uch_LastFrame)
 		    livAnimate(NODE_NAME(liv), ANM_STAND, 0, 0);
 	    } else
 		livHide(liv);
@@ -249,8 +249,8 @@ void livDoAnims(ubyte uch_Play, ubyte uch_Move)
 
 void livSetVisLScape(uword us_VisLScapeX, uword us_VisLScapeY)
 {
-    sc->us_VisLScapeX = us_VisLScapeX;
-    sc->us_VisLScapeY = us_VisLScapeY;
+    gSpriteControl->us_VisLScapeX = us_VisLScapeX;
+    gSpriteControl->us_VisLScapeY = us_VisLScapeY;
 }
 
 uword livGetXPos(char *Name)
@@ -350,7 +350,7 @@ static struct Living *livGet(char *uch_Name)
 {
     struct Living *liv = NULL;
 
-    liv = (struct Living *) GetNode(sc->p_Livings, uch_Name);
+    liv = (struct Living *) GetNode(gSpriteControl->p_Livings, uch_Name);
 
     if (!liv)
 	ErrorMsg(Internal_Error, ERROR_MODULE_LIVING, 1);
@@ -365,13 +365,13 @@ static void livAdd(char *uch_Name, char *uch_TemplateName, ubyte uch_XSize,
     struct AnimTemplate *tlt;
 
     liv = (struct Living *)
-	CreateNode(sc->p_Livings, sizeof(struct Living), uch_Name);
+	CreateNode(gSpriteControl->p_Livings, sizeof(struct Living), uch_Name);
 
     liv->uch_XSize = uch_XSize;
     liv->uch_YSize = uch_YSize;
 
     tlt = liv->p_OriginTemplate =
-	(struct AnimTemplate *) GetNode(sc->p_Template, uch_TemplateName);
+	(struct AnimTemplate *) GetNode(gSpriteControl->p_Template, uch_TemplateName);
 
     liv->us_LivingNr = BobInit(tlt->us_Width, tlt->us_Height);
 
@@ -388,7 +388,7 @@ static void livAdd(char *uch_Name, char *uch_TemplateName, ubyte uch_XSize,
     liv->us_XPos = 0;
     liv->us_YPos = 0;
 
-    liv->ul_LivesInAreaId = sc->ul_ActivAreaId;
+    liv->ul_LivesInAreaId = gSpriteControl->ul_ActivAreaId;
 
     liv->uch_Status = LIV_DISABLED;
 }
@@ -414,7 +414,7 @@ static void livLoadTemplates(void)
     for (i = 0; i < cnt; i++) {
 	line = NODE_NAME(GetNthNode(l, i));
 
-	tlt = (struct AnimTemplate *) CreateNode(sc->p_Template,
+	tlt = (struct AnimTemplate *) CreateNode(gSpriteControl->p_Template,
 						 sizeof(struct AnimTemplate),
 						 txtGetKey(1, line));
 
@@ -481,7 +481,7 @@ static void livShow(struct Living *liv)
     } else
 	action = liv->uch_Action;
 
-    frameNr = action * sc->uch_FrameCount + liv->ch_CurrFrameNr;
+    frameNr = action * gSpriteControl->uch_FrameCount + liv->ch_CurrFrameNr;
 
     frameNr = frameNr + tlt->us_FrameOffsetNr;
 
@@ -504,11 +504,11 @@ static ubyte livIsVisible(struct Living *liv)
     up = liv->us_YPos;
     down = up + liv->uch_YSize;
 
-    if (liv->ul_LivesInAreaId == sc->ul_ActivAreaId)
-	if (right > sc->us_VisLScapeX)
-	    if (left < (sc->us_VisLScapeX + sc->us_VisLScapeWidth))
-		if (down > sc->us_VisLScapeY)
-		    if (up < (sc->us_VisLScapeY + sc->us_VisLScapeHeight))
+    if (liv->ul_LivesInAreaId == gSpriteControl->ul_ActivAreaId)
+	if (right > gSpriteControl->us_VisLScapeX)
+	    if (left < (gSpriteControl->us_VisLScapeX + gSpriteControl->us_VisLScapeWidth))
+		if (down > gSpriteControl->us_VisLScapeY)
+		    if (up < (gSpriteControl->us_VisLScapeY + gSpriteControl->us_VisLScapeHeight))
 			visible = 1;
 
     return (visible);

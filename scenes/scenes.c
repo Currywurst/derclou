@@ -32,7 +32,7 @@ static ubyte tcDisplayInfoAboutPerson(U32 objID)
     char name[TXT_KEY_LENGTH];
     ubyte ret = 0;
 
-    if (has(Person_Matt_Stuvysunt, objID))	/* hat Matt Wissen ber ihn? */
+    if (has(Person_Matt_Stuvysunt, objID))	/* hat Matt Wissen ï¿½ber ihn? */
 	ret = Present(objID, "Person", InitPersonPresent);
     else {
 	dbGetObjectName(objID, name);
@@ -388,8 +388,7 @@ U32 tcTelefon(void)
 		} else
 		    Say(BUSINESS_TXT, 0, ben->PictID, "NOBODY_AT_HOME");
 	    }
-	} else
-	    choice = GET_OUT;
+	}
     } else
 	Say(THECLOU_TXT, 0, MATT_PICTID, "POOR_MATT");
 

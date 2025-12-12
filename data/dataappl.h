@@ -126,7 +126,7 @@ extern void tcInsertGuard(LIST * list, LIST * roomsList, U16 x, U16 y,
 #define   tcGetPersMood(p)              (((Person)p)->Mood)
 
 #define   tcWeightPersCanCarry(p)       (((S32)(p)->Stamina + (S32)(p)->Strength) * 200)	/* 0 - 100000 (100 kg) in gramm ! */
-#define   tcVolumePersCanCarry(p)       (((S32)(p)->Stamina + (S32)(p)->Strength) * 200)	/* in cm3 -> max 1 m3 fr eine Person */
+#define   tcVolumePersCanCarry(p)       (((S32)(p)->Stamina + (S32)(p)->Strength) * 200)	/* in cm3 -> max 1 m3 fï¿½r eine Person */
 
 #define   tcImprovePanic(p, v)          ((p)->Panic = (p)->Panic - ((p)->Panic / (v)))
 #define   tcImproveKnown(p, v)          ((p)->Known = min(255, (v)))
@@ -153,7 +153,7 @@ extern void tcInsertGuard(LIST * list, LIST * roomsList, U16 x, U16 y,
 #define   tcGetCarPrice(car)            (Round(max(((car->Value) * (car->State)) / 255, 100), 1))
 #define   tcGetCarTotalState(car)       (((S32)car->MotorState + (S32)car->BodyWorkState + (S32)car->TyreState) / 3)
 
-#define   tcGetDealerPerc(d, p)         (min((p + (((S32)p * ((S32)127L - (S32)d->Known)) / (S32)1270)), 255))
+#define   tcGetDealerPerc(d, p)         (min(((p) + (((S32)(p) * ((S32)127L - (S32)((d)->Known))) / (S32)1270)), 255))
 #define   tcGetDealerOffer(v, p)        (((S32)v * (S32)p) / (S32)255)
 #define   tcAddDealerSymp(d, v)         ((d)->Known = ChangeAbs ((d)->Known, v, 0, 255))
 
@@ -164,7 +164,7 @@ extern void tcInsertGuard(LIST * list, LIST * roomsList, U16 x, U16 y,
 /* defines for object Player */
 #define   tcGetPlayerMoney              (((Player)dbGetObject(Player_Player_1))->Money)
 #define   tcSetPlayerMoney(amount)      (((Player)dbGetObject(Player_Player_1))->Money = amount)
-#define   tcAddPlayerMoney(amount)      (((Player)dbGetObject(Player_Player_1))->Money = (tcGetPlayerMoney + amount))
+#define   tcAddPlayerMoney(amount)      (((Player)dbGetObject(Player_Player_1))->Money = (tcGetPlayerMoney + (amount)))
 
 /* defines for object Building */
 #define   tcRGetGRate(bui)              (bui->GRate)

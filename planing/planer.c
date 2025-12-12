@@ -18,6 +18,8 @@
   distribution.
  ****************************************************************************/
 
+#include <stdint.h>
+
 #include "base/base.h"
 
 #include "planing/planer.h"
@@ -580,7 +582,7 @@ static void plActionTake(void)
 								 OL_NAME(h2));
 			    h->nr = OL_NR(h2);	/* Loot */
 			    h->type = OL_NR(n);	/* Original */
-			    h->data = (void *) 1L;
+			    h->data = (void *)(uintptr_t) 1;
 			}
 		    }
 		}

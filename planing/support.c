@@ -294,6 +294,9 @@ ubyte plObjectInReach(U32 current, U32 objId)
     LIST *actionList = plGetObjectsList(current, 1);
     ubyte i, ret = 0;
 
+	if (!actionList)
+		return 0;
+
     for (i = BurglarsNr; i < PersonsNr; i++)
 	plInsertGuard(actionList, current, i);
 

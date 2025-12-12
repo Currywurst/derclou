@@ -28,7 +28,7 @@ U32 EndFrame = DLG_NO_SPEECH;
 struct DynDlgNode {
     NODE Link;
 
-    ubyte KnownBefore;		/* wie gut Sie bekannt sein mÅssen */
+    ubyte KnownBefore;		/* wie gut Sie bekannt sein mÔøΩssen */
     ubyte KnownAfter;		/* wie gut Sie danach bekannt sind ! */
 };
 
@@ -79,6 +79,7 @@ static LIST *ParseTalkText(LIST * origin, LIST * bubble, ubyte known)
     char snr[10], snr1[10];
     ubyte nr, nr1;
     U32 i;
+	    size_t keyLen;
 
     keyWords = CreateList();
 
@@ -93,7 +94,7 @@ static LIST *ParseTalkText(LIST * origin, LIST * bubble, ubyte known)
 	    if (*mem != '[')
 		line[line_pos++] = *(mem++);
 	    else {
-		mem++;		/* Klammer Åberspringen ! */
+		mem++;		/* Klammer ÔøΩberspringen ! */
 		key_pos = 0;
 
 		while ((*mem) != ']')
@@ -101,25 +102,33 @@ static LIST *ParseTalkText(LIST * origin, LIST * bubble, ubyte known)
 
 		key[key_pos++] = EOS;
 
-		mem++;		/* Klammer Åberspringen ! */
+		mem++;		/* Klammer ÔøΩberspringen ! */
 
-		for (i = 0; i < 3; i++) {	/* Zahlen entfernen */
-		    snr[i] = key[i];
-		    snr1[i] = key[key_pos - 4 + i];
-		}
+			keyLen = strlen(key);
 
-		for (i = 3; i < (strlen(key) - 3); i++)	/* keyWord */
-		    keyWord[i - 3] = key[i];
+			if (keyLen < 6)
+			    continue;
 
-		/* umwandeln ! */
-		snr[3] = EOS;
-		snr1[3] = EOS;
-		keyWord[strlen(key) - 6] = EOS;
+			for (i = 0; i < 3; i++) {	/* Zahlen entfernen */
+			    snr[i] = key[i];
+			    snr1[i] = key[keyLen - 3 + i];
+			}
+
+			{
+			    size_t wordLen = keyLen - 6;
+			    for (i = 0; i < wordLen; i++)
+				keyWord[i] = key[i + 3];
+			    keyWord[wordLen] = EOS;
+			}
+
+			/* umwandeln ! */
+			snr[3] = EOS;
+			snr1[3] = EOS;
 
 		nr = (ubyte) atol(snr);
 		nr1 = (ubyte) atol(snr1);
 
-		/* keyword einfÅgen */
+		/* keyword einfÔøΩgen */
 		for (i = 0; i < strlen(keyWord); i++)
 		    line[line_pos++] = keyWord[i];
 
@@ -156,7 +165,7 @@ void DynamicTalk(U32 Person1ID, U32 Person2ID, ubyte TalkMode)
 
     tcChgPersPopularity(p1, 5);	/* Bekanntheit steigt sehr gering */
 
-    /* je nach Bekanntheitsgrad wird Matt begrÅ·t ! */
+    /* je nach Bekanntheitsgrad wird Matt begrÔøΩÔøΩt ! */
     dbGetObjectName(Person2ID, name);
     strcpy(key, name);
 
@@ -168,7 +177,7 @@ void DynamicTalk(U32 Person1ID, U32 Person2ID, ubyte TalkMode)
 	    known = 0;
 	    knowsSet(Person1ID, Person2ID);
 	} else
-	    known = 1;		/* MOD - kein "FRIENDLY mehr mîglich!" */
+	    known = 1;		/* MOD - kein "FRIENDLY mehr mÔøΩglich!" */
     }
 
     strcat(key, Extension[known]);
@@ -199,7 +208,7 @@ void DynamicTalk(U32 Person1ID, U32 Person2ID, ubyte TalkMode)
 
 	quit = max = GetNrOfNodes(questions) - 1;
 
-	for (i = 0, stdcount = 0; i < 32; i++)	/* Std Fragen zÑhlen */
+	for (i = 0, stdcount = 0; i < 32; i++)	/* Std Fragen zÔøΩhlen */
 	    if (p2->TalkBits & (1 << i))
 		stdcount++;
 

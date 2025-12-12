@@ -166,9 +166,14 @@ void txtLoad(U32 textId)
 
 	    /* save text into xms */
 	    if (text) {
-                txt->txt_Handle = malloc(txt->length+1);
-                memcpy(txt->txt_Handle, text, txt->length);
-                free(text);
+	        txt->txt_Handle = malloc(txt->length+1);
+	        if (!txt->txt_Handle) {
+	            free(text);
+	            ErrorMsg(No_Mem, ERROR_MODULE_TXT, ERR_TXT_NO_MEM);
+	            return;
+	        }
+	        memcpy(txt->txt_Handle, text, txt->length);
+	        free(text);
 
 		/* let's play safe here... */
 		txt->txt_Handle[txt->length] = TXT_CHAR_EOF;
@@ -333,6 +338,11 @@ LIST *txtGoKeyAndInsert(U32 textId, char *key, ...)
 
     originList = txtGoKey(textId, key);
 
+	if (!originList) {
+		va_end(argument);
+		return txtList;
+	}
+
     for (node = LIST_HEAD(originList); NODE_SUCC(node); node = NODE_SUCC(node)) {
 	U8 i;
 	char originLine[256], txtLine[256];
@@ -351,6 +361,8 @@ LIST *txtGoKeyAndInsert(U32 textId, char *key, ...)
     }
 
     RemoveList(originList);
+
+	va_end(argument);
 
     return txtList;
 }

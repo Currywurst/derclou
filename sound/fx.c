@@ -95,22 +95,23 @@ void RemoveAudio(void)
     FXBase.us_AudioOk = 0;
 }
 
-void sndInitFX(void)
+static void sndSetFxChannel(bool enabled)
 {
     SDL_LockAudio();
 
-    SfxChannelOn = false;
+    SfxChannelOn = enabled;
 
     SDL_UnlockAudio();
 }
 
+void sndInitFX(void)
+{
+    sndSetFxChannel(false);
+}
+
 void sndDoneFX(void)
 {
-    SDL_LockAudio();
-
-    SfxChannelOn = false;
-
-    SDL_UnlockAudio();
+    sndSetFxChannel(false);
 }
 
 void sndPrepareFX(const char *name)
@@ -209,8 +210,13 @@ static void LoadVOC(const char *fileName)
 	resampleRate = numResamples * sampleRate / numSamples;
 	resampleRatio = (float) sampleRate / resampleRate;
 
-	sizeResamples = nResamples * sizeof(*pResampledSound);
-	pResampledSound = malloc(sizeResamples);
+            sizeResamples = nResamples * sizeof(*pResampledSound);
+            pResampledSound = malloc(sizeResamples);
+            if (!pResampledSound) {
+                free(pSoundFile);
+                ErrorMsg(No_Mem, ERROR_MODULE_SOUND, 0);
+                return;
+            }
 
 	for (i = 0; i < nResamples; i++) {
 	    float middleT, leftT;		/* time */

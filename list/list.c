@@ -229,6 +229,9 @@ void Link(LIST *list, void *node, void *predNode)
 
 void *UnLinkByAddr(LIST *list, void *node, NODE **predNode)
 {
+    if (!node)
+        return NULL;
+
     if (predNode)
 	*predNode = NODE_PRED(node);
 

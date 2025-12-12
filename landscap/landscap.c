@@ -31,7 +31,7 @@ U32 hasLootRelationID = 0;
 U32 hasRoomRelationID = 0;
 U32 FloorLinkRelationID = 0;
 
-struct LandScape *ls = NULL;
+struct LandScape *gLandscapeState = NULL;
 
 void lsSafeRectFill(U16 x0, U16 y0, U16 x1, U16 y1, U8 color)
 {
@@ -63,19 +63,19 @@ void lsSetVisibleWindow(uword x, uword y)
     wX = min(wX, LS_MAX_AREA_WIDTH - LS_VISIBLE_X_SIZE - 1);
     wY = min(wY, LS_MAX_AREA_HEIGHT - LS_VISIBLE_Y_SIZE - 1);
 
-    ls->us_WindowXPos = (uword) wX;
-    ls->us_WindowYPos = (uword) wY;
+    gLandscapeState->us_WindowXPos = (uword) wX;
+    gLandscapeState->us_WindowYPos = (uword) wY;
 
-    gfxNCH4SetViewPort(ls->us_WindowXPos, ls->us_WindowYPos);
+    gfxNCH4SetViewPort(gLandscapeState->us_WindowXPos, gLandscapeState->us_WindowYPos);
 
-    livSetVisLScape(ls->us_WindowXPos, ls->us_WindowYPos);
+    livSetVisLScape(gLandscapeState->us_WindowXPos, gLandscapeState->us_WindowYPos);
 }
 
 #ifdef THECLOU_DEBUG
 static void lsShowRooms(void)
 {
     if (GamePlayMode & GP_SHOW_ROOMS) {
-	LIST *rooms = lsGetRoomsOfArea(ls->ul_AreaID);
+	LIST *rooms = lsGetRoomsOfArea(gLandscapeState->ul_AreaID);
 	NODE *room;
 
 	for (room = LIST_HEAD(rooms); NODE_SUCC(room); room = NODE_SUCC(room)) {
@@ -98,7 +98,7 @@ void lsBuildScrollWindow(void)
 {
     S32 i, j;
     NODE *node;
-    LSArea area = (LSArea) dbGetObject(ls->ul_AreaID);
+    LSArea area = (LSArea) dbGetObject(gLandscapeState->ul_AreaID);
     U8 palette[GFX_PALETTE_SIZE];
 
     gfxSetColorRange(0, 255);
@@ -110,7 +110,7 @@ void lsBuildScrollWindow(void)
 	    /* if no floor is available fill with collision colour */
 
 	    if (LS_NO_FLOOR
-		((ls->p_CurrFloor[i * LS_FLOORS_PER_LINE + j].uch_FloorType))) {
+		((gLandscapeState->p_CurrFloor[i * LS_FLOORS_PER_LINE + j].uch_FloorType))) {
 		lsSafeRectFill(j * 32, i * 32, j * 32 + 31, i * 32 + 31,
                     LS_COLLIS_COLOR_2);
 	    } else
@@ -118,8 +118,8 @@ void lsBuildScrollWindow(void)
 	}
     }
 
-    /* Objekte setzen - zuerst W„nde */
-    for (node = (NODE *) LIST_HEAD(ls->p_ObjectRetrieval); NODE_SUCC(node);
+    /* Objekte setzen - zuerst Wï¿½nde */
+    for (node = (NODE *) LIST_HEAD(gLandscapeState->p_ObjectRetrieval); NODE_SUCC(node);
 	 node = (NODE *) NODE_SUCC(node)) {
 	LSObject lso = OL_DATA(node);
 
@@ -129,7 +129,7 @@ void lsBuildScrollWindow(void)
     }
 
     /* dann andere */
-    for (node = (NODE *) LIST_HEAD(ls->p_ObjectRetrieval); NODE_SUCC(node);
+    for (node = (NODE *) LIST_HEAD(gLandscapeState->p_ObjectRetrieval); NODE_SUCC(node);
 	 node = (NODE *) NODE_SUCC(node)) {
 	LSObject lso = OL_DATA(node);
 
@@ -137,8 +137,8 @@ void lsBuildScrollWindow(void)
 	    lsTurnObject(lso, lso->uch_Visible, LS_COLLISION);
     }
 
-    /* jetzt noch ein paar Sondef„lle (Kassa, Vase, ...) */
-    for (node = (NODE *) LIST_HEAD(ls->p_ObjectRetrieval); NODE_SUCC(node);
+    /* jetzt noch ein paar Sondefï¿½lle (Kassa, Vase, ...) */
+    for (node = (NODE *) LIST_HEAD(gLandscapeState->p_ObjectRetrieval); NODE_SUCC(node);
 	 node = (NODE *) NODE_SUCC(node)) {
 	LSObject lso = OL_DATA(node);
 
@@ -152,7 +152,7 @@ void lsBuildScrollWindow(void)
     }
 
     /* now refresh all doors and special objects */
-    for (node = (NODE *) LIST_HEAD(ls->p_ObjectRetrieval); NODE_SUCC(node);
+    for (node = (NODE *) LIST_HEAD(gLandscapeState->p_ObjectRetrieval); NODE_SUCC(node);
 	 node = (NODE *) NODE_SUCC(node)) {
 	LSObject lso = OL_DATA(node);
 
@@ -163,7 +163,7 @@ void lsBuildScrollWindow(void)
     }
 
     /* finally build the doors and specials on the PC */
-    for (node = (NODE *) LIST_HEAD(ls->p_ObjectRetrieval); NODE_SUCC(node);
+    for (node = (NODE *) LIST_HEAD(gLandscapeState->p_ObjectRetrieval); NODE_SUCC(node);
 	 node = (NODE *) NODE_SUCC(node)) {
 	LSObject lso = OL_DATA(node);
 
@@ -171,7 +171,7 @@ void lsBuildScrollWindow(void)
 	    lsTurnObject(lso, lso->uch_Visible, LS_COLLISION);
     }
 
-    for (node = (NODE *) LIST_HEAD(ls->p_ObjectRetrieval); NODE_SUCC(node);
+    for (node = (NODE *) LIST_HEAD(gLandscapeState->p_ObjectRetrieval); NODE_SUCC(node);
 	 node = (NODE *) NODE_SUCC(node)) {
 	LSObject lso = OL_DATA(node);
 
@@ -236,10 +236,10 @@ void lsTurnObject(LSObject lso, ubyte status, ubyte Collis)
     lso->uch_Visible = status;
 
     if (status == LS_OBJECT_VISIBLE)
-	LS_SET_OBJECT(ls->p_CurrFloor[floorIndex].uch_FloorType);
+	LS_SET_OBJECT(gLandscapeState->p_CurrFloor[floorIndex].uch_FloorType);
 
     if (lso->Type == Item_Mikrophon)
-	LS_SET_MICRO_ON_FLOOR(ls->p_CurrFloor[floorIndex].uch_FloorType);
+	LS_SET_MICRO_ON_FLOOR(gLandscapeState->p_CurrFloor[floorIndex].uch_FloorType);
 }
 
 ubyte lsIsInside(LSObject lso, uword x, uword y, uword x1, uword y1)
@@ -257,7 +257,7 @@ ubyte lsIsInside(LSObject lso, uword x, uword y, uword x1, uword y1)
 void lsSetActivLiving(char *Name, uword x, uword y)
 {
     if (Name) {
-	strcpy(ls->uch_ActivLiving, Name);
+	strcpy(gLandscapeState->uch_ActivLiving, Name);
 
 	if (x == (uword) - 1)
 	    x = livGetXPos(Name);
@@ -267,8 +267,8 @@ void lsSetActivLiving(char *Name, uword x, uword y)
 	lsSetVisibleWindow(x, y);
 	livRefreshAll();
 
-	ls->us_PersonXPos = (uword) (x - ls->us_WindowXPos);
-	ls->us_PersonYPos = (uword) (y - ls->us_WindowYPos);
+	gLandscapeState->us_PersonXPos = (uword) (x - gLandscapeState->us_WindowXPos);
+	gLandscapeState->us_PersonYPos = (uword) (y - gLandscapeState->us_WindowYPos);
     }
 }
 
@@ -337,7 +337,7 @@ static void lsSortObjectList(LIST ** l)
 
 	    /* wenn Abbruch wegen NODE_SUCC(NODE_SUCC(.. erflogte, darf
 	     * nicht der NODE_PRED(node1) genomen werden!
-	     * nach dem Sortieren ist auáerdem Schluá!
+	     * nach dem Sortieren ist auï¿½erdem Schluï¿½!
 	     */
 
 	    if ((lso1->us_DestY != lso2->us_DestY))
@@ -359,9 +359,9 @@ void lsRefreshObjectList(U32 areaID)
 {
     SetObjectListAttr(OLF_PRIVATE_LIST, Object_LSObject);
     AskAll(dbGetObject(areaID), ConsistOfRelationID, BuildObjectList);
-    ls->p_ObjectRetrieval = ObjectListPrivate;
+    gLandscapeState->p_ObjectRetrieval = ObjectListPrivate;
 
-    lsSortObjectList(&ls->p_ObjectRetrieval);
+    lsSortObjectList(&gLandscapeState->p_ObjectRetrieval);
 }
 
 U32 lsAddLootBag(uword x, uword y, ubyte bagNr)
@@ -371,7 +371,7 @@ U32 lsAddLootBag(uword x, uword y, ubyte bagNr)
     lso->uch_Visible = LS_OBJECT_VISIBLE;
 
     /* add loot bag */
-    if (!hasLootBag(ls->ul_AreaID, (U32) (9700 + bagNr))) {
+    if (!hasLootBag(gLandscapeState->ul_AreaID, (U32) (9700 + bagNr))) {
 	lso->us_DestX = x;
 	lso->us_DestY = y;
 
@@ -379,7 +379,7 @@ U32 lsAddLootBag(uword x, uword y, ubyte bagNr)
 	       LS_LOOTBAG_Y_OFFSET);
 	BobVis(lso->us_OffsetFact);
 
-	hasLootBagSet(ls->ul_AreaID, (U32) (9700 + bagNr));
+	hasLootBagSet(gLandscapeState->ul_AreaID, (U32) (9700 + bagNr));
     }
 
     return ((U32) (9700 + bagNr));
@@ -393,7 +393,7 @@ void lsRemLootBag(U32 bagId)
 
     BobInVis(lso->us_OffsetFact);
 
-    hasLootBagUnSet(ls->ul_AreaID, bagId);
+    hasLootBagUnSet(gLandscapeState->ul_AreaID, bagId);
 }
 
 void lsRefreshAllLootBags(void)
@@ -406,7 +406,7 @@ void lsRefreshAllLootBags(void)
 	LSObject lso = dbGetObject(9700 + i);
 
 	if ((lso->uch_Visible == LS_OBJECT_VISIBLE)
-	    && (hasLootBag(ls->ul_AreaID, (U32) (9700 + i)))) {
+	    && (hasLootBag(gLandscapeState->ul_AreaID, (U32) (9700 + i)))) {
 	    BobSet(lso->us_OffsetFact, lso->us_DestX, lso->us_DestY,
 		   LS_LOOTBAG_X_OFFSET, LS_LOOTBAG_Y_OFFSET);
 	    BobVis(lso->us_OffsetFact);
@@ -478,7 +478,7 @@ void lsPatchObjects(void)
 
     ((Item) dbGetObject(Item_Fenster))->OffsetFact = 16;
 
-    for (n = (NODE *) LIST_HEAD(ls->p_ObjectRetrieval); NODE_SUCC(n);
+    for (n = (NODE *) LIST_HEAD(gLandscapeState->p_ObjectRetrieval); NODE_SUCC(n);
 	 n = (NODE *) NODE_SUCC(n)) {
 	lso = OL_DATA(n);
 
@@ -524,7 +524,7 @@ void lsPatchObjects(void)
 	if (OL_NR(n) == tcLAST_BURGLARY_LEFT_CTRL_OBJ)
 	    lso->ul_Status |= (1 << Const_tcON_OFF);
 
-	lsSetOldState(lso);	/* muá sein! */
+	lsSetOldState(lso);	/* muï¿½ sein! */
 
 	/* change for correcting amiga plans (corrects walls) before using pc level desinger
 	   lso->us_DestX -= 9;
@@ -573,7 +573,7 @@ void lsInitDoorRefresh(U32 ObjId)
     struct LSDoorRefreshNode *drn;
     ubyte found = 0;
 
-    for (drn = (struct LSDoorRefreshNode *) LIST_HEAD(ls->p_DoorRefreshList);
+    for (drn = (struct LSDoorRefreshNode *) LIST_HEAD(gLandscapeState->p_DoorRefreshList);
 	 NODE_SUCC(drn); drn = (struct LSDoorRefreshNode *) NODE_SUCC(drn))
 	if (drn->lso == lso)
 	    found = 1;
@@ -582,8 +582,8 @@ void lsInitDoorRefresh(U32 ObjId)
 	width = lso->uch_Size;
 	height = lso->uch_Size;
 
-	destX = ls->us_DoorXOffset;
-	destY = ls->us_DoorYOffset;
+	destX = gLandscapeState->us_DoorXOffset;
+	destY = gLandscapeState->us_DoorYOffset;
 
         {
             Rect srcR, dstR;
@@ -603,21 +603,21 @@ void lsInitDoorRefresh(U32 ObjId)
         }
 
 	drn = (struct LSDoorRefreshNode *)
-	    CreateNode(ls->p_DoorRefreshList, sizeof(*drn), NULL);
+	    CreateNode(gLandscapeState->p_DoorRefreshList, sizeof(*drn), NULL);
 
 	drn->lso = lso;
 
-	drn->us_XOffset = ls->us_DoorXOffset;
-	drn->us_YOffset = ls->us_DoorYOffset;
+	drn->us_XOffset = gLandscapeState->us_DoorXOffset;
+	drn->us_YOffset = gLandscapeState->us_DoorYOffset;
 
-	if ((ls->us_DoorXOffset + width) >= 320) {
-	    if (ls->us_DoorYOffset <= 128)	/* prevent overflow */
+	if ((gLandscapeState->us_DoorXOffset + width) >= 320) {
+	    if (gLandscapeState->us_DoorYOffset <= 128)	/* prevent overflow */
 	    {
-		ls->us_DoorXOffset = 0;
-		ls->us_DoorYOffset += height;
+		gLandscapeState->us_DoorXOffset = 0;
+		gLandscapeState->us_DoorYOffset += height;
 	    }
 	} else
-	    ls->us_DoorXOffset += width;
+	    gLandscapeState->us_DoorXOffset += width;
     }
 }
 
@@ -627,7 +627,7 @@ void lsDoDoorRefresh(LSObject lso)
     struct LSDoorRefreshNode *drn;
     uword width, height;
 
-    for (drn = (struct LSDoorRefreshNode *) LIST_HEAD(ls->p_DoorRefreshList);
+    for (drn = (struct LSDoorRefreshNode *) LIST_HEAD(gLandscapeState->p_DoorRefreshList);
 	 NODE_SUCC(drn); drn = (struct LSDoorRefreshNode *) NODE_SUCC(drn))
 	if (drn->lso == lso)
 	    break;

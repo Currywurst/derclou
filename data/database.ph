@@ -27,7 +27,7 @@
 /* private defines */
 #define dbGetObjectReal(key)  (((struct dbObject *)key)-1)
 #define dbGetObjectKey(obj)   ((void *)(obj+1))
-#define dbGetObjectHashNr(nr) ((U8)(nr % OBJ_HASH_SIZE))
+#define dbGetObjectHashNr(nr) ((U8)(((nr) % OBJ_HASH_SIZE)))
 
 #define EOS                   ((char)'\0')
 

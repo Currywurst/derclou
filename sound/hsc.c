@@ -338,7 +338,7 @@ static void hsc_process_row()
 	    }
 	    /* Set speed */
 
-	    if (effect >= 0xF0 && effect <= 0xFF) {
+	    if (effect >= 0xF0) {
 		hsc_speed = effect - 0xEF;
 	    }
 	}

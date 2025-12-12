@@ -110,48 +110,45 @@ static U32 dbGetStdDskSize(U32 type)
 {
     switch (type) {
 	/* tcMain */
-    case Object_Person:
-	return 25;
-    case Object_Player:
-	return 31;
-    case Object_Car:
-	return 24;
-    case Object_Location:
-	return 8;
-    case Object_Ability:
-	return 6;
-    case Object_Item:
-	return 22;
-    case Object_Tool:
-	return 9;
-    case Object_Environment:
-	return 7;
-    case Object_London:
-	return 1;
-    case Object_Evidence:
-	return 12;
-    case Object_Loot:
-	return 12;
-    case Object_CompleteLoot:
-	return 48;
-    case Object_LSOLock:
-	return 2;
-    case Object_LSObject:
-	return 21;
+	case Object_Person:
+	case Object_Building: /* building uses same size */
+	    return 25;
+	case Object_Player:
+	    return 31;
+	case Object_Car:
+	    return 24;
+	case Object_Location:
+	case Object_LSRoom:
+	    return 8;
+	case Object_Ability:
+	    return 6;
+	case Object_Item:
+	    return 22;
+	case Object_Tool:
+	    return 9;
+	case Object_Environment:
+	    return 7;
+	case Object_London:
+	    return 1;
+	case Object_Evidence:
+	case Object_Loot:
+	    return 12;
+	case Object_CompleteLoot:
+	    return 48;
+	case Object_LSOLock:
+	    return 2;
+	case Object_LSObject:
+	    return 21;
 
 	/* tcBuild */
-    case Object_Building:
-	return 25;
-    case Object_Police:
-	return 3;
-    case Object_LSArea:
-	return 49;
-    case Object_LSRoom:
-	return 8;
-    default:
-	DebugMsg(ERR_ERROR, ERROR_MODULE_DATABASE,
+	case Object_Police:
+	    return 3;
+	case Object_LSArea:
+	    return 49;
+	default:
+	    DebugMsg(ERR_ERROR, ERROR_MODULE_DATABASE,
             "Unknown type #%" PRIu32, type);
-	return 0;
+	    return 0;
     }
 }
 
@@ -165,7 +162,9 @@ static U32 dbGetProfiDskSize(U32 type)
 	return 31;
     case Object_Car:
 	return 24;
-    case Object_Location:
+	case Object_Location:
+	case Object_Environment:
+	case Object_LSRoom:
 	return 8;
     case Object_Ability:
 	return 6;
@@ -173,13 +172,10 @@ static U32 dbGetProfiDskSize(U32 type)
 	return 22;
     case Object_Tool:
 	return 9;
-    case Object_Environment:
-	return 8;
     case Object_London:
 	return 1;
-    case Object_Evidence:
-	return 12;
-    case Object_Loot:
+	case Object_Evidence:
+	case Object_Loot:
 	return 12;
     case Object_CompleteLoot:
 	return 48;
@@ -195,8 +191,6 @@ static U32 dbGetProfiDskSize(U32 type)
 	return 3;
     case Object_LSArea:
 	return 49;
-    case Object_LSRoom:
-	return 8;
     default:
 	DebugMsg(ERR_ERROR, ERROR_MODULE_DATABASE,
             "Unknown type #%" PRIu32, type);
@@ -1428,16 +1422,23 @@ void *dbIsObject(U32 nr, U32 type)
 struct ObjectNode *dbAddObjectNode(LIST * objectList, U32 nr, U32 flags)
 {
     struct ObjectNode *n = NULL;
-    struct dbObject *obj = dbGetObjectReal(dbGetObject(nr));
+	void *objKey = dbGetObject(nr);
+	struct dbObject *obj = NULL;
     char name[TXT_KEY_LENGTH], *namePtr;
 
     name[0] = EOS;
+
+	if (!objKey)
+		return NULL;
+
+	obj = dbGetObjectReal(objKey);
 
     if (flags & OLF_INSERT_STAR)
 	strcpy(name, "*");
 
     if (flags & OLF_INCLUDE_NAME) {
 	char *succString = NULL;
+        size_t succLen = 0;
 
 	if ((flags & OLF_ADD_PREV_STRING) && ObjectListPrevString)
 	    strcat(name,
@@ -1448,26 +1449,30 @@ struct ObjectNode *dbAddObjectNode(LIST * objectList, U32 nr, U32 flags)
 	namePtr = name;
 
 	if ((flags & OLF_ADD_SUCC_STRING) && ObjectListSuccString)
-	    succString =
-		ObjectListSuccString(obj->nr, obj->type, dbGetObjectKey(obj));
+            succString =
+                ObjectListSuccString(obj->nr, obj->type, dbGetObjectKey(obj));
+
+        if (succString)
+            succLen = strlen(succString);
 
 	if ((flags & (OLF_ADD_SUCC_STRING | OLF_ALIGNED)) && ObjectListWidth) {
-	    register U8 i, len = strlen(name) + strlen(succString);
+            size_t len = strlen(name) + succLen;
+            register U8 i;
 
-	    if (flags & OLF_INSERT_STAR)
-		len--;
+            if ((flags & OLF_INSERT_STAR) && len)
+                len--;
 
-	    for (i = len; i < ObjectListWidth; i++)
-		strcat(name, " ");
+            for (i = (U8) len; i < ObjectListWidth; i++)
+                strcat(name, " ");
 	}
 
-	if ((flags & OLF_ADD_SUCC_STRING) && ObjectListSuccString)
+	if (succLen && (flags & OLF_ADD_SUCC_STRING) && ObjectListSuccString)
 	    strcat(name, succString);
     } else
 	namePtr = NULL;
 
-    if ((n =
-	 (struct ObjectNode *) CreateNode(objectList, sizeof(*n), namePtr))) {
+	if ((n =
+	     (struct ObjectNode *) CreateNode(objectList, sizeof(*n), namePtr))) {
 	n->nr = obj->nr;
 	n->type = obj->type;
 	n->data = dbGetObjectKey(obj);
@@ -1529,17 +1534,20 @@ void BuildObjectList(void *key)
 
 void ExpandObjectList(LIST * objectList, char *expandItem)
 {
-    register struct ObjectNode *objNode;
+	register struct ObjectNode *objNode;
 
-    if (!
-	(objNode =
-	 (struct ObjectNode *) CreateNode(objectList, sizeof(*objNode),
-					  expandItem)))
-	ErrorMsg(Internal_Error, ERROR_MODULE_DATABASE, 2);
+	objNode =
+		(struct ObjectNode *) CreateNode(objectList, sizeof(*objNode),
+										 expandItem);
 
-    objNode->nr = 0;
-    objNode->type = 0;
-    objNode->data = NULL;
+	if (!objNode) {
+		ErrorMsg(Internal_Error, ERROR_MODULE_DATABASE, 2);
+		return;
+	}
+
+	objNode->nr = 0;
+	objNode->type = 0;
+	objNode->data = NULL;
 }
 
 

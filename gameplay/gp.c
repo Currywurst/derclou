@@ -138,7 +138,7 @@ void PatchStory(void)
 
 	/* change possibilites in story_9 too! */
 
-	/* fr die Kaserne hier einen Successor eingetragen! */
+	/* fï¿½r die Kaserne hier einen Successor eingetragen! */
 	GetLocScene(65)->std_succ = CreateList();
 	node =
 	    (struct TCEventNode *) CreateNode(GetLocScene(65)->std_succ,
@@ -180,14 +180,14 @@ U32 PlayStory(void)
 	if (!CheckConditions(curr))
 	    ErrorMsg(Internal_Error, ERROR_MODULE_GAMEPLAY, 2);
 
-	/* Entscheidung fr eine Szene getroffen ! */
+	/* Entscheidung fï¿½r eine Szene getroffen ! */
 
 	SceneArgs.ReturnValue = 0L;
 	SceneArgs.Ueberschrieben = 0;
 
 	/* wenn Szene Storyszene ist, dann Musik beibehalten */
-	/* (Storyszenen „ndern sie selbst in Done */
-	/* ansonsten wird die Musi hier ver„ndert */
+	/* (Storyszenen ï¿½ndern sie selbst in Done */
+	/* ansonsten wird die Musi hier verï¿½ndert */
 
 	if (!story_scene)
 	    tcPlaySound();
@@ -201,7 +201,7 @@ U32 PlayStory(void)
 	    first = 0;
 	}
 
-	/* die neue Szene initialisieren ! ( Bhnenbild aufbauen ) */
+	/* die neue Szene initialisieren ! ( Bï¿½hnenbild aufbauen ) */
 #ifdef DEEP_DEBUG
 	printf("----------------------------------------\n");
 	printf("SCENE_INIT %" PRIu32 "\n", curr->EventNr);
@@ -243,7 +243,7 @@ U32 PlayStory(void)
 #ifdef DEEP_DEBUG
 		printf("SCENE_DONE\n");
 #endif
-		curr->Done();	/* Funktionalit„t */
+		curr->Done();	/* Funktionalitï¿½t */
 	    } else
 		ErrorMsg(Internal_Error, ERROR_MODULE_GAMEPLAY, 3);
 
@@ -329,27 +329,27 @@ S32 CheckConditions(struct Scene *scene)
     struct Bedingungen *bed;
     NODE *node;
 
-    /* wenn Std Szene, dann muá nichts berprft werden ! */
+    /* wenn Std Szene, dann muï¿½ nichts ï¿½berprï¿½ft werden ! */
 
     if (scene->LocationNr != (U32) - 1)
 	return (1L);
 
-    /* es handelt sich um keine Std Szene -> šberprfen ! */
-    /* berprfen, ob Szene nicht schon zu oft geschehen ist ! */
+    /* es handelt sich um keine Std Szene -> ï¿½berprï¿½fen ! */
+    /* ï¿½berprï¿½fen, ob Szene nicht schon zu oft geschehen ist ! */
     if ((scene->Anzahl != ((uword) (CAN_ALWAYS_HAPPEN))) &&
 	(scene->Geschehen) >= (scene->Anzahl))
 	return (0L);
 
-    /* Jetzt die einzelnen Bedingungen berprfen */
+    /* Jetzt die einzelnen Bedingungen ï¿½berprï¿½fen */
     if (!(bed = (scene->bed)))
 	return (1L);
 
     if (bed->Ort != (U32) -1)		/* spielt der Ort eine Rolle ? */
 	if (GetLocation != (bed->Ort))
-	    return (0L);	/* spielt eine Rolle und ist nicht erfllt */
+	    return (0L);	/* spielt eine Rolle und ist nicht erfï¿½llt */
 
     /*
-     * šberprfen, ob ein Event eingetreten ist,
+     * ï¿½berprï¿½fen, ob ein Event eingetreten ist,
      * das nicht geschehen darf !
      */
 
@@ -438,7 +438,7 @@ void PrepareStory(char *filename)
 	else
 	    film->gameplay[i].bed = NULL;	/* Spielablaufszene : keine Bedingungen ! */
 
-	/* Scene Struktur fllen : */
+	/* Scene Struktur fï¿½llen : */
 	scene->Done = StdDone;
 	scene->Init = StdInit;
 	scene->Moeglichkeiten = NS.Moeglichkeiten;
@@ -449,9 +449,9 @@ void PrepareStory(char *filename)
 	scene->LocationNr = NS.NewOrt;
 
 	/* Nachfolgerliste aufbauen !  */
-	/* Achtung! auch Patch „ndern! */
+	/* Achtung! auch Patch ndern! */
 
-	if (NS.AnzahlderNachfolger) {
+	if (NS.AnzahlderNachfolger && NS.nachfolger) {
 	    scene->std_succ = CreateList();
 
 	    for (j = 0; j < NS.AnzahlderNachfolger; j++) {
@@ -469,7 +469,7 @@ void PrepareStory(char *filename)
 	    scene->std_succ = NULL;
     }
 
-    /* von den Events muá nichts geladen werden ! */
+    /* von den Events muï¿½ nichts geladen werden ! */
     dskClose(file);
 }
 
@@ -483,37 +483,37 @@ void InitConditions(struct Scene *scene, struct NewScene *ns)
 
     bed->Ort = ns->Ort;
 
-    if (ns->AnzahlderEvents) {
-	bed->events = CreateList();
+	if (ns->AnzahlderEvents && ns->events) {
+	    bed->events = CreateList();
 
-	for (i = 0; i < ns->AnzahlderEvents; i++) {
-	    node =
-		(struct TCEventNode *) CreateNode(bed->events, sizeof(*node),
-						  NULL);
+	    for (i = 0; i < ns->AnzahlderEvents; i++) {
+		node =
+		    (struct TCEventNode *) CreateNode(bed->events, sizeof(*node),
+					      NULL);
 
-	    node->EventNr = ns->events[i];
-	}
+		node->EventNr = ns->events[i];
+	    }
 
-	if (ns->events)
-	    TCFreeMem(ns->events, sizeof(U32) * (ns->AnzahlderEvents));
-    } else
-	bed->events = NULL;
+	    if (ns->events)
+		TCFreeMem(ns->events, sizeof(U32) * (ns->AnzahlderEvents));
+	} else
+	    bed->events = NULL;
 
-    if (ns->AnzahlderN_Events) {
-	bed->n_events = CreateList();
+	if (ns->AnzahlderN_Events && ns->n_events) {
+	    bed->n_events = CreateList();
 
-	for (i = 0; i < ns->AnzahlderN_Events; i++) {
-	    node =
-		(struct TCEventNode *) CreateNode(bed->n_events,
-						  sizeof(*node), NULL);
+	    for (i = 0; i < ns->AnzahlderN_Events; i++) {
+		node =
+		    (struct TCEventNode *) CreateNode(bed->n_events,
+					      sizeof(*node), NULL);
 
-	    node->EventNr = ns->n_events[i];
-	}
+		node->EventNr = ns->n_events[i];
+	    }
 
-	if (ns->n_events)
-	    TCFreeMem(ns->n_events, sizeof(U32) * (ns->AnzahlderN_Events));
-    } else
-	bed->n_events = NULL;
+	    if (ns->n_events)
+		TCFreeMem(ns->n_events, sizeof(U32) * (ns->AnzahlderN_Events));
+	} else
+	    bed->n_events = NULL;
 
     scene->bed = bed;
 }
@@ -532,10 +532,35 @@ void FreeConditions(struct Scene *scene)
     }
 }
 
+static U32 *gpAllocAndReadEvents(FILE *file, U32 count, U32 errorCode)
+{
+	U32 i;
+	U32 *buffer;
+
+	if (!count)
+		return NULL;
+
+	buffer = (U32 *) TCAllocMem(sizeof(U32) * count, 0);
+
+	if (!buffer) {
+		U32 dummy;
+
+		ErrorMsg(No_Mem, ERROR_MODULE_GAMEPLAY, errorCode);
+		for (i = 0; i < count; i++)
+			dskRead_U32LE(file, &dummy);
+
+		return NULL;
+	}
+
+	for (i = 0; i < count; i++)
+		dskRead_U32LE(file, &buffer[i]);
+
+	return buffer;
+}
+
 void LoadSceneforStory(struct NewScene *dest, FILE * file)
 {
-    U32 *event_nrs = NULL;
-    U32 dummy;
+	U32 dummy;
 
     dskRead_U32LE(file, &dest->EventNr);
 
@@ -568,53 +593,9 @@ void LoadSceneforStory(struct NewScene *dest, FILE * file)
     dskRead_U32LE(file, &dest->Anim);
     dskRead_U32LE(file, &dest->NewOrt);
 
-    /* allocate mem for events and read them */
-    if (dest->AnzahlderEvents) {
-	U32 i;
-
-	if (!
-	    (event_nrs =
-	     (U32 *) TCAllocMem(sizeof(U32) * (dest->AnzahlderEvents), 0)))
-	    ErrorMsg(No_Mem, ERROR_MODULE_GAMEPLAY, 8);
-
-	for (i = 0; i < dest->AnzahlderEvents; i++)
-	    dskRead_U32LE(file, &event_nrs[i]);
-    } else
-	event_nrs = NULL;
-
-    dest->events = event_nrs;
-
-    /* allocate mem for n_events and read them */
-    if (dest->AnzahlderN_Events) {
-	U32 i;
-
-	if (!
-	    (event_nrs =
-	     (U32 *) TCAllocMem(sizeof(U32) * (dest->AnzahlderN_Events), 0)))
-	    ErrorMsg(No_Mem, ERROR_MODULE_GAMEPLAY, 9);
-
-	for (i = 0; i < dest->AnzahlderN_Events; i++)
-	    dskRead_U32LE(file, &event_nrs[i]);
-    } else
-	event_nrs = NULL;
-
-    dest->n_events = event_nrs;
-
-    /* allocate mem for successors and read them */
-    if (dest->AnzahlderNachfolger) {
-	U32 i;
-
-	if (!
-	    (event_nrs =
-	     (U32 *) TCAllocMem(sizeof(U32) * (dest->AnzahlderNachfolger), 0)))
-	    ErrorMsg(No_Mem, ERROR_MODULE_GAMEPLAY, 10);
-
-	for (i = 0; i < dest->AnzahlderNachfolger; i++)
-	    dskRead_U32LE(file, &event_nrs[i]);
-    } else
-	event_nrs = NULL;
-
-    dest->nachfolger = event_nrs;
+    dest->events = gpAllocAndReadEvents(file, dest->AnzahlderEvents, 8);
+    dest->n_events = gpAllocAndReadEvents(file, dest->AnzahlderN_Events, 9);
+    dest->nachfolger = gpAllocAndReadEvents(file, dest->AnzahlderNachfolger, 10);
 }
 
 void AddVTime(U32 add)
@@ -723,9 +704,13 @@ char *BuildDate(U32 days, char *date)
 
 char *GetCurrLocName(void)
 {
-    U32 index;
+	struct Scene *scene = GetCurrentScene();
+	U32 index;
 
-    index = GetCurrentScene()->LocationNr;
+	if (!scene)
+		return NULL;
 
-    return (NODE_NAME(GetNthNode(film->loc_names, index)));
+	index = scene->LocationNr;
+
+	return (NODE_NAME(GetNthNode(film->loc_names, index)));
 }

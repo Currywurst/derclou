@@ -109,7 +109,7 @@
 #define PLANING_NR_PERSONS          4
 #define PLANING_NR_GUARDS           4
 #define PLANING_NR_LOOTS            8
-#define PLANING_NR_PLANS            NRBLINES-1
+#define PLANING_NR_PLANS            (NRBLINES - 1)
 
 /* getting correct has loot relation */
 #define hasLoot(current)            (((LSArea)dbGetObject(livWhereIs(Planing_Name[current])))->ul_ObjectBaseNr + REL_HAS_LOOT_OFFSET)

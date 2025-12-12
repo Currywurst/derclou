@@ -18,6 +18,8 @@
   distribution.
  ****************************************************************************/
 
+#include <string.h>
+
 #include "base/base.h"
 
 #include "planing/prepare.h"
@@ -67,19 +69,10 @@ void plCloseHandler(NODE * n)
 /* Preparation & Unpreparation functions */
 void plPrepareData(void)
 {
-    register ubyte i;
-
-    for (i = 0; i < PLANING_NR_LOOTS; i++)
-	Planing_Loot[i] = 0;
-
-    for (i = 0; i < PLANING_NR_PERSONS; i++)
-	Planing_Weight[i] = 0;
-
-    for (i = 0; i < PLANING_NR_PERSONS; i++)
-	Planing_Volume[i] = 0;
-
-    for (i = 0; i < PLANING_NR_GUARDS; i++)
-	Planing_Guard[i] = 0;
+	memset(Planing_Loot, 0, sizeof(Planing_Loot));
+	memset(Planing_Weight, 0, sizeof(Planing_Weight));
+	memset(Planing_Volume, 0, sizeof(Planing_Volume));
+	memset(Planing_Guard, 0, sizeof(Planing_Guard));
 }
 
 void plPrepareSprite(U32 livNr, U32 areaId)
@@ -278,14 +271,28 @@ void plPrepareSys(U32 currPer, U32 objId, ubyte sysMode)
 	}
     }
 
-    if (sysMode & PLANING_HANDLER_CLEAR)
-	foreach(BurglarsList, (void (*)(void *)) plClearHandler);
+	{
+	    static const struct {
+		U32 flag;
+		LIST **list;
+		void (*fn)(NODE *);
+	    } handlerOps[] = {
+		{ PLANING_HANDLER_CLEAR, &BurglarsList, plClearHandler },
+		{ PLANING_HANDLER_CLOSE, &PersonsList, plCloseHandler },
+		{ PLANING_HANDLER_OPEN,  &PersonsList, plBuildHandler }
+	    };
 
-    if (sysMode & PLANING_HANDLER_CLOSE)
-	foreach(PersonsList, (void (*)(void *)) plCloseHandler);
+	    size_t handlerCount = sizeof(handlerOps) / sizeof(handlerOps[0]);
+	    size_t idx;
 
-    if (sysMode & PLANING_HANDLER_OPEN)
-	foreach(PersonsList, (void (*)(void *)) plBuildHandler);
+	    for (idx = 0; idx < handlerCount; idx++) {
+		if (sysMode & handlerOps[idx].flag) {
+		    LIST *target = *handlerOps[idx].list;
+		    if (target)
+			foreach(target, (void (*)(void *)) handlerOps[idx].fn);
+		}
+	    }
+	}
 
     if ((sysMode & PLANING_GUARDS_LOAD) && (PersonsNr > BurglarsNr)
 	&& !(GamePlayMode & GP_LEVEL_DESIGN)) {

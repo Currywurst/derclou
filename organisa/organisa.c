@@ -288,7 +288,8 @@ U32 tcChooseDriver(U32 persID)
     LIST *list;
     ubyte choice;
     Person matt = (Person) dbGetObject(Person_Matt_Stuvysunt);
-    U32 newPersID;
+	U32 newPersID;
+	U32 selectedID = persID;
 
     joined_byAll(Person_Matt_Stuvysunt,
 		 OLF_INCLUDE_NAME | OLF_INSERT_STAR | OLF_PRIVATE_LIST,
@@ -304,15 +305,15 @@ U32 tcChooseDriver(U32 persID)
 	txtGetFirstLine(BUSINESS_TXT, "NO_CHOICE", exp);
 	ExpandObjectList(list, exp);
 
-	if (ChoiceOk(choice = Bubble(list, 0, 0L, 0L), GET_OUT, list)) {
-	    newPersID = OL_NR(GetNthNode(list, (U32) choice));
+		if (ChoiceOk(choice = Bubble(list, 0, 0L, 0L), GET_OUT, list)) {
+	    	newPersID = OL_NR(GetNthNode(list, (U32) choice));
 
 	    if (!has(newPersID, Ability_Autos)) {
 		Person pers = dbGetObject(newPersID);
 
 		Say(BUSINESS_TXT, 0, pers->PictID, "PLAN_CANT_DRIVE");
 	    } else {
-		persID = newPersID;
+	    		selectedID = newPersID;
 
 		rememberAll(Person_Matt_Stuvysunt, OLF_NORMAL, Object_Person);
 
@@ -320,14 +321,14 @@ U32 tcChooseDriver(U32 persID)
 		    rememberUnSet(Person_Matt_Stuvysunt,
 				  OL_NR(LIST_HEAD(ObjectList)));
 
-		rememberSet(Person_Matt_Stuvysunt, persID);
+			rememberSet(Person_Matt_Stuvysunt, selectedID);
 	    }
 	}
     }
 
     RemoveList(list);
 
-    return (persID);
+	return (selectedID);
 }
 
 U32 tcChooseDestBuilding(U32 objID)
@@ -335,6 +336,7 @@ U32 tcChooseDestBuilding(U32 objID)
     LIST *list;
     ubyte choice;
     char exp[TXT_KEY_LENGTH];
+	U32 selectedID = objID;
 
     hasAll(Person_Matt_Stuvysunt,
 	   OLF_INCLUDE_NAME | OLF_INSERT_STAR | OLF_PRIVATE_LIST,
@@ -344,20 +346,20 @@ U32 tcChooseDestBuilding(U32 objID)
     txtGetFirstLine(BUSINESS_TXT, "NO_CHOICE", exp);
     ExpandObjectList(list, exp);
 
-    if (ChoiceOk(choice = Bubble(list, 0, 0L, 0L), GET_OUT, list)) {
-	objID = OL_NR(GetNthNode(list, (U32) choice));
+	if (ChoiceOk(choice = Bubble(list, 0, 0L, 0L), GET_OUT, list)) {
+	selectedID = OL_NR(GetNthNode(list, (U32) choice));
 
 	rememberAll(Person_Matt_Stuvysunt, OLF_NORMAL, Object_Building);
 
 	if (!LIST_EMPTY(ObjectList))
 	    rememberUnSet(Person_Matt_Stuvysunt, OL_NR(LIST_HEAD(ObjectList)));
 
-	rememberSet(Person_Matt_Stuvysunt, objID);
+	rememberSet(Person_Matt_Stuvysunt, selectedID);
     }
 
     RemoveList(list);
 
-    return (objID);
+	return (selectedID);
 }
 
 U32 tcChooseEscapeCar(U32 objID)
@@ -366,6 +368,7 @@ U32 tcChooseEscapeCar(U32 objID)
     ubyte choice;
     Person matt = (Person) dbGetObject(Person_Matt_Stuvysunt);
     U32 newObjID;
+	U32 selectedID = objID;
 
     hasAll(Person_Matt_Stuvysunt,
 	   OLF_INCLUDE_NAME | OLF_INSERT_STAR | OLF_PRIVATE_LIST, Object_Car);
@@ -389,7 +392,7 @@ U32 tcChooseEscapeCar(U32 objID)
 
 	    if (GetNrOfNodes(l2) <= car->PlacesInCar) {
 		Organisation.PlacesInCar = car->PlacesInCar;
-		objID = newObjID;
+		selectedID = newObjID;
 
 		rememberAll(Person_Matt_Stuvysunt, OLF_NORMAL, Object_Car);
 
@@ -397,7 +400,7 @@ U32 tcChooseEscapeCar(U32 objID)
 		    rememberUnSet(Person_Matt_Stuvysunt,
 				  OL_NR(LIST_HEAD(ObjectList)));
 
-		rememberSet(Person_Matt_Stuvysunt, objID);
+		rememberSet(Person_Matt_Stuvysunt, selectedID);
 	    } else {
 		SetBubbleType(THINK_BUBBLE);
 		Say(BUSINESS_TXT, 0, matt->PictID, "PLAN_NO_PLACE");
@@ -411,7 +414,7 @@ U32 tcChooseEscapeCar(U32 objID)
     RemoveList(l2);
     RemoveList(l1);
 
-    return (objID);
+	return (selectedID);
 }
 
 void tcChooseGuys(void)

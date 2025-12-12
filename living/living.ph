@@ -91,7 +91,7 @@ struct Living {			/* komplette Daten einer Instanz   *//* eines Lebewesens      
     ubyte uch_Status;		/* enabled or disabled */
 };
 
-static struct SpriteControl *sc = NULL;
+static struct SpriteControl *gSpriteControl = NULL;
 
 static struct Living *livGet(char *uch_Name);
 

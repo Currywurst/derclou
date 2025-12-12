@@ -33,13 +33,13 @@ uword us_ScrollX, us_ScrollY;
 
 void lsShowEscapeCar(void)
 {
-    Building b = dbGetObject(ls->ul_BuildingID);
+    Building b = dbGetObject(gLandscapeState->ul_BuildingID);
 
     livPrepareAnims();
 
-    BobSet(ls->us_EscapeCarBobId, b->CarXPos, b->CarYPos,
+    BobSet(gLandscapeState->us_EscapeCarBobId, b->CarXPos, b->CarYPos,
 	   LS_ESCAPE_CAR_X_OFFSET, LS_ESCAPE_CAR_Y_OFFSET);
-    BobVis(ls->us_EscapeCarBobId);
+    BobVis(gLandscapeState->us_EscapeCarBobId);
 }
 
 static void lsSetAlarmPict(LSObject lso)
@@ -66,9 +66,9 @@ static void lsRefreshClosedDoors(uword us_X0, uword us_Y0,
 {
     NODE *node;
 
-    ls->uch_ShowObjectMask = 0x40;
+    gLandscapeState->uch_ShowObjectMask = 0x40;
 
-    for (node = (NODE *) LIST_HEAD(ls->p_ObjectRetrieval); NODE_SUCC(node);
+    for (node = (NODE *) LIST_HEAD(gLandscapeState->p_ObjectRetrieval); NODE_SUCC(node);
 	 node = (NODE *) NODE_SUCC(node)) {
 	LSObject lso = OL_DATA(node);
 
@@ -79,7 +79,7 @@ static void lsRefreshClosedDoors(uword us_X0, uword us_Y0,
 				    LS_SHOW_DOOR);
     }
 
-    ls->uch_ShowObjectMask = 0x0;
+    gLandscapeState->uch_ShowObjectMask = 0x0;
 }
 
 void lsRefreshStatue(LSObject lso)
@@ -95,7 +95,7 @@ void lsRefreshStatue(LSObject lso)
     struct _LSObject dummy;	/* only passed to lsPrepareFromMem */
     MemRastPort *rp;
 
-    ls->uch_ShowObjectMask = 0x40;
+    gLandscapeState->uch_ShowObjectMask = 0x40;
 
     size = 16;			/* is the size correct ?? */
 
@@ -111,14 +111,14 @@ void lsRefreshStatue(LSObject lso)
 
     gfxLSPutMsk(rp, srcX, srcY, destX, destY, size, size);
 
-    ls->uch_ShowObjectMask = 0x0;
+    gLandscapeState->uch_ShowObjectMask = 0x0;
 }
 
 void lsFastRefresh(LSObject lso)
 {
     U16 x0, x1, y0, y1;
 
-    ls->uch_ShowObjectMask = 0x40;	/* ignore bit 6 */
+    gLandscapeState->uch_ShowObjectMask = 0x40;	/* ignore bit 6 */
 
     switch (lso->Type) {
     case Item_Holztuer:
@@ -205,7 +205,7 @@ void lsFastRefresh(LSObject lso)
 	break;
     }
 
-    ls->uch_ShowObjectMask = 0;	/* copy all bits */
+    gLandscapeState->uch_ShowObjectMask = 0;	/* copy all bits */
 }
 
 static MemRastPort *lsPrepareFromMemBySize(ubyte uch_Size)
@@ -249,10 +249,10 @@ void lsBlitOneObject(MemRastPort *rp, U16 offsetFact, U16 dx, U16 dy, U16 size)
     srcY = (offsetFact / perRow) * size;
     srcX = (offsetFact % perRow) * size;
 
-    if (ls->uch_ShowObjectMask)
+    if (gLandscapeState->uch_ShowObjectMask)
         gfxLSPutMsk(rp, srcX, srcY, dx, dy, size, size);
     else
-        gfxLSPutMsk(rp, srcX, srcY, dx, dy, size, size);
+        gfxLSPut(rp, srcX, srcY, dx, dy, size, size);
 
 }
 
@@ -322,7 +322,7 @@ void lsBlitFloor(uword floorIndex, uword destx, uword desty)
     uword srcX;
 
     srcX =
-	((ls->p_CurrFloor[floorIndex].uch_FloorType) & 0xf) * LS_FLOOR_X_SIZE;
+	((gLandscapeState->p_CurrFloor[floorIndex].uch_FloorType) & 0xf) * LS_FLOOR_X_SIZE;
 
     gfxLSPut(rp, srcX, 0, destx, desty, LS_FLOOR_X_SIZE, LS_FLOOR_Y_SIZE);
 }
@@ -351,19 +351,19 @@ void lsCloseGfx(void)
 
 void lsScrollCorrectData(S32 dx, S32 dy)
 {
-    ls->us_WindowXPos += dx;
-    ls->us_WindowYPos += dy;
+    gLandscapeState->us_WindowXPos += dx;
+    gLandscapeState->us_WindowYPos += dy;
 
-    ls->us_RasInfoScrollX = (word) dx;
-    ls->us_RasInfoScrollY = (word) dy;
+    gLandscapeState->us_RasInfoScrollX = (word) dx;
+    gLandscapeState->us_RasInfoScrollY = (word) dy;
 
-    livSetVisLScape(ls->us_WindowXPos, ls->us_WindowYPos);
+    livSetVisLScape(gLandscapeState->us_WindowXPos, gLandscapeState->us_WindowYPos);
 }
 
 void lsDoScroll(void)
 {
-    gfxNCH4Scroll(ls->us_RasInfoScrollX, ls->us_RasInfoScrollY);
+    gfxNCH4Scroll(gLandscapeState->us_RasInfoScrollX, gLandscapeState->us_RasInfoScrollY);
 
-    ls->us_RasInfoScrollX = 0;
-    ls->us_RasInfoScrollY = 0;
+    gLandscapeState->us_RasInfoScrollX = 0;
+    gLandscapeState->us_RasInfoScrollY = 0;
 }

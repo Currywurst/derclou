@@ -23,21 +23,25 @@
 #include "landscap/landscap.h"
 #include "landscap/landscap.ph"
 
-uword DX, DY, PX, PY;
+static word gScrollWindowDeltaX,
+		   gScrollWindowDeltaY,
+		   gScrollPersonDeltaX,
+		   gScrollPersonDeltaY;
 
 ubyte lsScrollLandScape(ubyte direction)
 {
-    struct LandScape *l = ls;
-    ubyte collis = 0, back = 0, speed = ls->uch_ScrollSpeed;
+    struct LandScape *l = gLandscapeState;
+    ubyte collis = 0, back = 0, speed = gLandscapeState->uch_ScrollSpeed;
 
     if (direction != (ubyte) - 1)
 	collis = lsInitScrollLandScape(direction, LS_SCROLL_PREPARE);
 
     if (!collis) {
-	lsScrollCorrectData(DX * speed, DY * speed);
+	lsScrollCorrectData(gScrollWindowDeltaX * speed,
+			   gScrollWindowDeltaY * speed);
 
-	l->us_PersonXPos += (PX * speed);
-	l->us_PersonYPos += (PY * speed);
+	l->us_PersonXPos += (gScrollPersonDeltaX * speed);
+	l->us_PersonYPos += (gScrollPersonDeltaY * speed);
 
 	back = (ubyte) direction;
     }
@@ -47,7 +51,7 @@ ubyte lsScrollLandScape(ubyte direction)
 
 ubyte lsInitScrollLandScape(ubyte direction, ubyte mode)
 {
-    register struct LandScape *l = ls;
+    register struct LandScape *l = gLandscapeState;
     S32 dx = 0, dy = 0, px = 0, py = 0, tx = 0, ty = 0, speed =
 	(S32) l->uch_ScrollSpeed;
     ubyte collis = 0;
@@ -133,10 +137,10 @@ ubyte lsInitScrollLandScape(ubyte direction, ubyte mode)
     collis = lsIsCollision(tx, ty, direction);
 
     if (mode & LS_SCROLL_PREPARE) {
-	DX = dx;
-	DY = dy;
-	PX = px;
-	PY = py;
+	gScrollWindowDeltaX = dx;
+	gScrollWindowDeltaY = dy;
+	gScrollPersonDeltaX = px;
+	gScrollPersonDeltaY = py;
     }
 
     return (collis);

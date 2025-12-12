@@ -1204,9 +1204,15 @@ void plSync(ubyte animate, U32 targetTime, U32 times, ubyte direction)
 		    }
 		}
 
-		if ((i < BurglarsNr)
-		    || ((i >= BurglarsNr) && !Planing_Guard[i - BurglarsNr]))
-		    livAnimate(Planing_Name[i], dir, 0, 0);
+		int shouldAnimate = 0;
+
+		if (i < BurglarsNr)
+	    shouldAnimate = 1;
+	else if (!Planing_Guard[i - BurglarsNr])
+	    shouldAnimate = 1;
+
+		if (shouldAnimate)
+	    livAnimate(Planing_Name[i], dir, 0, 0);
 
 		livSetPos(Planing_Name[i], xpos, ypos);
 	    }

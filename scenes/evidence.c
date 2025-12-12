@@ -32,7 +32,7 @@ static ubyte tcCarFound(Car car, U32 time)
     Person miles = dbGetObject(Person_Miles_Chickenwing);
     ubyte found = 0;
 
-    /* Der Jaguar darf nicht gefunden werden - sonst k”nnte er ja */
+    /* Der Jaguar darf nicht gefunden werden - sonst kï¿½nnte er ja */
     /* nicht explodieren! */
 
     if (car != dbGetObject(Car_Jaguar_XK_1950)) {
@@ -105,7 +105,7 @@ static U32 tcIsThereATraitor(void)
 		 n = (NODE *) NODE_SUCC(n)) {
 		Person pers = OL_DATA(n);
 
-		if (OL_NR(n) != Person_Matt_Stuvysunt) {	/* Matt verr„t sich nicht selbst */
+		if (OL_NR(n) != Person_Matt_Stuvysunt) {	/* Matt verrï¿½t sich nicht selbst */
 		    if ((traitorId == 0) || (pers->Known < symp)) {
 			traitorId = OL_NR(n);
 			symp = pers->Known;
@@ -163,8 +163,8 @@ U32 tcStartEvidence(void)
 
 	/* alle folgenden Werte sind zwischen 0 und 255 */
 
-	/* statt durch 765 zu dividieren wurde ursprnglich durch 255 dividiert -> */
-	/* viel zu groáe Werte */
+	/* statt durch 765 zu dividieren wurde ursprï¿½nglich durch 255 dividiert -> */
+	/* viel zu groï¿½e Werte */
 
 	if (Search.SpotTouchCount[i])
 	    div = 1;
@@ -241,7 +241,7 @@ U32 tcStartEvidence(void)
 	 * Division durch 0!
 	 */
 
-	/* zuf„llig eine Spurenart ausw„hlen */
+	/* zufï¿½llig eine Spurenart auswï¿½hlen */
 	evidenceNr = CalcRandomNr(0, 7);
 
 	/* wenn diese Spurenart schon angzeigt wurde, eine freie
@@ -252,7 +252,7 @@ U32 tcStartEvidence(void)
 	while (((1 << evidenceNr) & shownEvidence[guyNr]) && (j++ < 7))
 	    evidenceNr = (evidenceNr + 1) % 7;
 
-	if (j < 8) {		/* 8 stimmt! -> ober wird anschlieáend noch erh”ht */
+	if (j < 8) {		/* 8 stimmt! -> ober wird anschlieï¿½end noch erhï¿½ht */
 	    shownEvidence[guyNr] |= (1 << evidenceNr);
 
 	    if (MyEvidence[guyNr][evidenceNr] > 0) {
@@ -264,9 +264,9 @@ U32 tcStartEvidence(void)
 		evidence->Recognition = Recognition[guyNr] / 3;	/* change also: totalEvidence /= 3.... */
 		evidence->pers = (U32) OL_NR(GetNthNode(guys, (U32) guyNr));
 
-		/* fr alle "Evidences" - stimmt so, da fr alle */
+		/* fï¿½r alle "Evidences" - stimmt so, da fï¿½r alle */
 		/* Personen die selbe Evidence Struct benutzt wird -> */
-		/* bestimmte Werte sind von vorher gesetzt und mssen gel”scht */
+		/* bestimmte Werte sind von vorher gesetzt und mï¿½ssen gelï¿½scht */
 		/* werden */
 
 		evidence->WalkTrail = 0;
@@ -382,7 +382,7 @@ void tcForgetGuys(void)
 	if (OL_NR(node) != Person_Matt_Stuvysunt) {
 	    Person pers = OL_DATA(node);
 
-	    pers->TalkBits |= (1 << Const_tcTALK_JOB_OFFER);	/* ber Jobs kann man wieder reden! */
+	    pers->TalkBits |= (1 << Const_tcTALK_JOB_OFFER);	/* ï¿½ber Jobs kann man wieder reden! */
 
 	    joined_byUnSet(Person_Matt_Stuvysunt, OL_NR(node));
 	    joinUnSet(Person_Matt_Stuvysunt, OL_NR(node));
@@ -546,7 +546,7 @@ S32 tcEscapeByCar(U32 escBits, S32 timeLeft)
 	Say(BUSINESS_TXT, 0, miles->PictID, "HINWEIS_2");	/* woher Hinweis? */
     }
 
-    /* Gludo erz„hlt woher Hinweise stammten (falls es welche gibt) */
+    /* Gludo erzï¿½hlt woher Hinweise stammten (falls es welche gibt) */
     if (escBits & FAHN_ALARM) {
 	if (escBits & FAHN_ALARM_ALARM)
 	    Say(BUSINESS_TXT, 0, gludo->PictID, "HINWEIS_6");	/* Alarmanlage */
@@ -648,7 +648,7 @@ S32 tcCalcCarEscape(S32 timeLeft)
 		      driverWeight[wayType]);
 	ps = CalcValue(ps, 0, car->PS + car->PS / 4, i, driverWeight[wayType]);
 
-	/* Maázahl fr Geschwindigkeit */
+	/* Maï¿½zahl fï¿½r Geschwindigkeit */
 	/* Einheit = m pro Schleifendurchlauf */
 	unrealSpeed = (kmh * kmhWeight[wayType] + ps * psWeight[wayType]) / 100;
 
@@ -749,9 +749,7 @@ S32 tcCalcCarEscape(S32 timeLeft)
 	}
 	while ((i < length) && (YardsInFront > 50));
 
-	if (YardsInFront > 50)
-	    result = FAHN_ESCAPED;
-	else
+	if (YardsInFront <= 50)
 	    result = FAHN_NOT_ESCAPED;
     }
 

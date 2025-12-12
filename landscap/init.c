@@ -34,18 +34,18 @@ void lsInitLandScape(U32 bID, ubyte mode)
 {				/* initialisiert das Landschaftsmodul */
     S32 i;
 
-    if (!ls)
-	ls = TCAllocMem(sizeof(*ls), 0);
+    if (!gLandscapeState)
+	gLandscapeState = TCAllocMem(sizeof(*gLandscapeState), 0);
 
-    ls->ul_BuildingID = bID;
+    gLandscapeState->ul_BuildingID = bID;
 
-    ls->us_RasInfoScrollX = 0;
-    ls->us_RasInfoScrollY = 0;
+    gLandscapeState->us_RasInfoScrollX = 0;
+    gLandscapeState->us_RasInfoScrollY = 0;
 
     lsInitGfx();		/* dont change location of this line */
 
-    ls->uch_ScrollSpeed = LS_STD_SCROLL_SPEED;
-    ls->uch_ShowObjectMask = 0;
+    gLandscapeState->uch_ScrollSpeed = LS_STD_SCROLL_SPEED;
+    gLandscapeState->uch_ShowObjectMask = 0;
 
     lsSetCollMode(mode);
 
@@ -55,14 +55,14 @@ void lsInitLandScape(U32 bID, ubyte mode)
 
     lsLoadAllSpots();
 
-    ls->uch_FloorsPerWindowColumn = (ubyte) (LS_FLOORS_PER_COLUMN);
-    ls->uch_FloorsPerWindowLine = (ubyte) (LS_FLOORS_PER_LINE);
+    gLandscapeState->uch_FloorsPerWindowColumn = (ubyte) (LS_FLOORS_PER_COLUMN);
+    gLandscapeState->uch_FloorsPerWindowLine = (ubyte) (LS_FLOORS_PER_LINE);
 
-    ls->ul_AreaID = lsGetStartArea();	/* !! MOD 04-01 - vor Sprites!!! */
+    gLandscapeState->ul_AreaID = lsGetStartArea();	/* !! MOD 04-01 - vor Sprites!!! */
 
     BobInitLists();
 
-    ls->us_EscapeCarBobId = BobInit(14, 14);
+    gLandscapeState->us_EscapeCarBobId = BobInit(14, 14);
 
     /* lootbags must be initialized prior to Livings because they
        have a lower priority (appear below maxis) */
@@ -73,22 +73,22 @@ void lsInitLandScape(U32 bID, ubyte mode)
            but as handle for the bob */
 	lso->us_OffsetFact = BobInit(14, 14);
 
-	hasLootBagUnSet(ls->ul_AreaID, (U32) i);
+	hasLootBagUnSet(gLandscapeState->ul_AreaID, (U32) i);
     }
 
     livInit(0, 0, LS_VISIBLE_X_SIZE, LS_VISIBLE_Y_SIZE, LS_MAX_AREA_WIDTH,
-	    LS_MAX_AREA_HEIGHT, 8, ls->ul_AreaID);
+	    LS_MAX_AREA_HEIGHT, 8, gLandscapeState->ul_AreaID);
 
-    ls->p_CurrFloor = NULL;
+    gLandscapeState->p_CurrFloor = NULL;
 
-    ls->us_DoorXOffset = 0;
-    ls->us_DoorYOffset = 32;	/* above are 16er objects */
+    gLandscapeState->us_DoorXOffset = 0;
+    gLandscapeState->us_DoorYOffset = 32;	/* above are 16er objects */
 
-    ls->p_DoorRefreshList = CreateList();
+    gLandscapeState->p_DoorRefreshList = CreateList();
 
     lsInitFloorSquares();
 
-    lsInitActivArea(ls->ul_AreaID, (uword) - 1, (uword) - 1, NULL);
+    lsInitActivArea(gLandscapeState->ul_AreaID, (uword) - 1, (uword) - 1, NULL);
     lsShowEscapeCar();
 }
 
@@ -96,13 +96,13 @@ void lsInitActivArea(U32 areaID, uword x, uword y, char *livingName)
 {
     LSArea area = (LSArea) dbGetObject(areaID);
 
-    ls->ul_AreaID = areaID;
+    gLandscapeState->ul_AreaID = areaID;
 
     lsSetRelations(areaID);
     lsSetObjectRetrievalList(areaID);
 
-    ls->us_WindowXSize = area->us_Width;
-    ls->us_WindowYSize = area->us_Height;
+    gLandscapeState->us_WindowXSize = area->us_Width;
+    gLandscapeState->us_WindowYSize = area->us_Height;
 
     if (x == (uword) - 1)
 	x = area->us_StartX0;
@@ -156,20 +156,20 @@ void lsInitObjects(void)
     NODE *n;
 
     /* alle Relationen erzeugen */
-    consistsOfAll(ls->ul_BuildingID, OLF_PRIVATE_LIST, Object_LSArea);
+    consistsOfAll(gLandscapeState->ul_BuildingID, OLF_PRIVATE_LIST, Object_LSArea);
     areas = ObjectListPrivate;
 
     /* jetzt alle Stockwerke durchgehen! */
     for (i = 0; i < 3; i++) {
-	ls->ul_ObjectRetrievalAreaId[i] = 0;
-	ls->p_ObjectRetrievalLists[i] = NULL;
+	gLandscapeState->ul_ObjectRetrievalAreaId[i] = 0;
+	gLandscapeState->p_ObjectRetrievalLists[i] = NULL;
     }
 
     for (n = (NODE *) LIST_HEAD(areas); NODE_SUCC(n); n = (NODE *) NODE_SUCC(n)) {
 	lsInitRelations(OL_NR(n));
 
 	/* Daten laden */
-	lsInitObjectDB(ls->ul_BuildingID, OL_NR(n));
+	lsInitObjectDB(gLandscapeState->ul_BuildingID, OL_NR(n));
 
 	lsSetRelations(OL_NR(n));
 	lsRefreshObjectList(OL_NR(n));	/* ObjectRetrievalList erstellen */
@@ -177,13 +177,13 @@ void lsInitObjects(void)
 	/* there's a lot to be patched! */
 	lsPatchObjects();
 
-	ls->p_ObjectRetrievalLists[areaCount] = ls->p_ObjectRetrieval;	/* und merken */
-	ls->ul_ObjectRetrievalAreaId[areaCount] = OL_NR(n);
+	gLandscapeState->p_ObjectRetrievalLists[areaCount] = gLandscapeState->p_ObjectRetrieval;	/* und merken */
+	gLandscapeState->ul_ObjectRetrievalAreaId[areaCount] = OL_NR(n);
 
 	areaCount++;
     }
 
-    lsLoadGlobalData(ls->ul_BuildingID, OL_NR(NODE_PRED(n)));
+    lsLoadGlobalData(gLandscapeState->ul_BuildingID, OL_NR(NODE_PRED(n)));
 
     RemoveList(areas);
 }
@@ -193,7 +193,10 @@ void lsLoadGlobalData(U32 bld, U32 ul_AreaId)
     char areaName[TXT_KEY_LENGTH], fileName[DSK_PATH_MAX];
 
     dbGetObjectName(ul_AreaId, areaName);
-    areaName[strlen(areaName) - 1] = '\0';
+    size_t areaLen = strlen(areaName);
+    if (!areaLen)
+        return;
+    areaName[areaLen - 1] = '\0';
 
     strcat(areaName, OBJ_GLOBAL_REL_EXTENSION);
 
@@ -236,11 +239,11 @@ static void lsInitFloorSquares(void)
     LIST *areas;
 
     for (i = 0; i < 3; i++)
-	ls->p_AllFloors[i] = NULL;
+	gLandscapeState->p_AllFloors[i] = NULL;
 
     count = LS_FLOORS_PER_LINE * LS_FLOORS_PER_COLUMN;
 
-    consistsOfAll(ls->ul_BuildingID, OLF_PRIVATE_LIST, Object_LSArea);
+    consistsOfAll(gLandscapeState->ul_BuildingID, OLF_PRIVATE_LIST, Object_LSArea);
     areas = ObjectListPrivate;
 
     /* jetzt alle Stockwerke durchgehen! */
@@ -249,17 +252,17 @@ static void lsInitFloorSquares(void)
 	unsigned j;
 	FILE *fh;
 
-	ls->p_AllFloors[i] = TCAllocMem(size, 0);
-	ls->ul_FloorAreaId[i] = OL_NR(n);
+	gLandscapeState->p_AllFloors[i] = TCAllocMem(size, 0);
+	gLandscapeState->ul_FloorAreaId[i] = OL_NR(n);
 
-	dbGetObjectName(ls->ul_FloorAreaId[i], areaName);
+	dbGetObjectName(gLandscapeState->ul_FloorAreaId[i], areaName);
 	strcat(areaName, FLOOR_DATA_EXTENSION);
 
 	dskBuildPathName(DISK_CHECK_FILE, DATA_DIRECTORY, areaName, fileName);
 
 	if ((fh = dskOpen(fileName, "rb"))) {
 	    for (j = 0; j < count; j++)
-		dskRead(fh, &ls->p_AllFloors[i][j].uch_FloorType, sizeof(U8));
+		dskRead(fh, &gLandscapeState->p_AllFloors[i][j].uch_FloorType, sizeof(U8));
 
 	    dskClose(fh);
 	}
@@ -274,7 +277,7 @@ static void lsLoadAllSpots(void)
     LIST *areas;
     NODE *n;
 
-    consistsOfAll(ls->ul_BuildingID, OLF_PRIVATE_LIST | OLF_INCLUDE_NAME,
+    consistsOfAll(gLandscapeState->ul_BuildingID, OLF_PRIVATE_LIST | OLF_INCLUDE_NAME,
 		  Object_LSArea);
     areas = ObjectListPrivate;
 
@@ -282,11 +285,14 @@ static void lsLoadAllSpots(void)
 
     strcpy(fileName, NODE_NAME(n));
 
-    fileName[strlen(fileName) - 1] = '\0';
+    size_t nameLen = strlen(fileName);
+    if (!nameLen)
+        return;
+    fileName[nameLen - 1] = '\0';
 
     strcat(fileName, SPOT_DATA_EXTENSION);
 
-    lsLoadSpots(ls->ul_BuildingID, fileName);
+    lsLoadSpots(gLandscapeState->ul_BuildingID, fileName);
 
     RemoveList(areas);
 }
@@ -296,8 +302,8 @@ static void lsSetCurrFloorSquares(U32 areaId)
     S32 i;
 
     for (i = 0; i < 3; i++)
-	if (areaId == ls->ul_FloorAreaId[i])
-	    ls->p_CurrFloor = ls->p_AllFloors[i];
+	if (areaId == gLandscapeState->ul_FloorAreaId[i])
+	    gLandscapeState->p_CurrFloor = gLandscapeState->p_AllFloors[i];
 }
 
 
@@ -312,14 +318,14 @@ static void lsDoneFloorSquares(void)
     size_t count, i, size;
 
     for (i = 0; i < 3; i++) {
-	if (ls->p_AllFloors[i]) {
+	if (gLandscapeState->p_AllFloors[i]) {
 	    count = LS_FLOORS_PER_LINE * LS_FLOORS_PER_COLUMN;
 
 	    size = sizeof(struct LSFloorSquare) * count;
 
-	    TCFreeMem(ls->p_AllFloors[i], size);
+	    TCFreeMem(gLandscapeState->p_AllFloors[i], size);
 
-	    ls->p_AllFloors[i] = NULL;
+	    gLandscapeState->p_AllFloors[i] = NULL;
 	}
     }
 
@@ -332,7 +338,7 @@ void lsDoneObjectDB(U32 areaID)
     RemRelations(area->ul_ObjectBaseNr, DB_tcBuild_SIZE);
     dbDeleteAllObjects(area->ul_ObjectBaseNr, DB_tcBuild_SIZE);
 
-    /* globale Relation wieder l”schen */
+    /* globale Relation wieder lï¿½schen */
     RemRelations(Relation_hasClock - 1, 3);
 
     /* und die "Relationsheader" wieder anlegen */
@@ -346,20 +352,20 @@ void lsDoneLandScape(void)
     NODE *n;
     S32 areaCount = 0, i;
 
-    if (ls) {
+    if (gLandscapeState) {
 	LIST *areas;
 
-	consistsOfAll(ls->ul_BuildingID, OLF_PRIVATE_LIST, Object_LSArea);
+	consistsOfAll(gLandscapeState->ul_BuildingID, OLF_PRIVATE_LIST, Object_LSArea);
 	areas = ObjectListPrivate;
 
 	for (n = (NODE *) LIST_HEAD(areas); NODE_SUCC(n);
 	     n = (NODE *) NODE_SUCC(n), areaCount++) {
 	    lsDoneObjectDB(OL_NR(n));
 
-	    if (ls->p_ObjectRetrievalLists[areaCount]) {
-		RemoveList(ls->p_ObjectRetrievalLists[areaCount]);
-		ls->p_ObjectRetrievalLists[areaCount] = NULL;
-		ls->ul_ObjectRetrievalAreaId[areaCount] = 0;
+	    if (gLandscapeState->p_ObjectRetrievalLists[areaCount]) {
+		RemoveList(gLandscapeState->p_ObjectRetrievalLists[areaCount]);
+		gLandscapeState->p_ObjectRetrievalLists[areaCount] = NULL;
+		gLandscapeState->ul_ObjectRetrievalAreaId[areaCount] = 0;
 	    }
 	}
 
@@ -375,7 +381,7 @@ void lsDoneLandScape(void)
 	    BobDone(lso->us_OffsetFact);
 	}
 
-	BobDone(ls->us_EscapeCarBobId);
+	BobDone(gLandscapeState->us_EscapeCarBobId);
 
 	lsDoneSpots();
 
@@ -383,11 +389,11 @@ void lsDoneLandScape(void)
 
 	lsDoneFloorSquares();
 
-	if (ls->p_DoorRefreshList)
-	    RemoveList(ls->p_DoorRefreshList);
+	if (gLandscapeState->p_DoorRefreshList)
+	    RemoveList(gLandscapeState->p_DoorRefreshList);
 
-	TCFreeMem(ls, sizeof(*ls));
-	ls = NULL;
+	TCFreeMem(gLandscapeState, sizeof(*gLandscapeState));
+	gLandscapeState = NULL;
     }
 }
 
