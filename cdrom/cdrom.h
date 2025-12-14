@@ -8,15 +8,16 @@
 #ifndef MODULE_CDROM
 #define MODULE_CDROM
 
-extern unsigned int CDRomInstalled;
+extern int CDRomInstalled;
 
 #include "theclou.h"
 
 int CDROM_Install(void);
 void CDROM_UnInstall(void);
 
-void CDROM_WaitForMedia(void);
+int CDROM_WaitForMedia(void);
 
+void CDROM_PlayAudioTrack(U8 TrackNum);
 void CDROM_PlayAudioSequence(U8 TrackNum, U32 StartOffset, U32 EndOffset);
 void CDROM_StopAudioTrack(void);
 

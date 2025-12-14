@@ -24,6 +24,7 @@
 #define DLG_NO_SPEECH	((U32) -1)
 U32 StartFrame = DLG_NO_SPEECH;
 U32 EndFrame = DLG_NO_SPEECH;
+static char SpeechClipKey[TXT_KEY_LENGTH];
 
 struct DynDlgNode {
     NODE Link;
@@ -265,10 +266,24 @@ void DynamicTalk(U32 Person1ID, U32 Person2ID, ubyte TalkMode)
 
 void PlayFromCDROM(void)
 {
-    if ((StartFrame != DLG_NO_SPEECH) && (EndFrame != DLG_NO_SPEECH)) {
-        sndFading(16);
-        CDROM_PlayAudioSequence(2, StartFrame, EndFrame);
-    }
+	if (!setup.CDAudio) {
+		return;
+	}
+
+	if (setup.CDAudioFromCD &&
+		(StartFrame != DLG_NO_SPEECH) && (EndFrame != DLG_NO_SPEECH)) {
+		sndFading(16);
+		CDROM_PlayAudioSequence(2, StartFrame, EndFrame);
+		return;
+	}
+
+	if (setup.CDAudioFromWav && SpeechClipKey[0] != '\0') {
+		sndFading(16);
+		if (!sndPlaySpeechSample(SpeechClipKey)) {
+			DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+					 "Missing speech sample: %s", SpeechClipKey);
+		}
+	}
 }
 
 ubyte Say(U32 TextID, ubyte activ, uword Person, const char *text)
@@ -287,10 +302,13 @@ ubyte Say(U32 TextID, ubyte activ, uword Person, const char *text)
            (neither pictures or text, nor any other directory) or
            speech would be interrupted */
 
-        if (txtKeyExists(CDROM_TXT, text)) {
+		if (txtKeyExists(CDROM_TXT, text)) {
             char keys[TXT_KEY_LENGTH];
 
             txtGetFirstLine(CDROM_TXT, text, keys);
+
+			strncpy(SpeechClipKey, text, sizeof(SpeechClipKey) - 1);
+			SpeechClipKey[sizeof(SpeechClipKey) - 1] = '\0';
 
             StartFrame =
                 (txtGetKeyAsULONG(1, keys) * 60L +
@@ -301,19 +319,26 @@ ubyte Say(U32 TextID, ubyte activ, uword Person, const char *text)
 
             choice = Bubble(bubble, activ, NULL, 0L);
         } else {
-            StartFrame = DLG_NO_SPEECH;
-            EndFrame = DLG_NO_SPEECH;
+			StartFrame = DLG_NO_SPEECH;
+			EndFrame = DLG_NO_SPEECH;
+			SpeechClipKey[0] = '\0';
 
             choice = Bubble(bubble, activ, NULL, 0L);
         }
 
         if (setup.CDAudio) {
-            CDROM_StopAudioTrack();
+			if (setup.CDAudioFromCD) {
+				CDROM_StopAudioTrack();
+			}
+			if (setup.CDAudioFromWav) {
+				sndStopSpeechSample();
+			}
             sndFading(0);
         }
 
         StartFrame = DLG_NO_SPEECH;
         EndFrame = DLG_NO_SPEECH;
+		SpeechClipKey[0] = '\0';
 
         RemoveList(bubble);
     } else {

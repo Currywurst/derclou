@@ -1676,8 +1676,11 @@ void ShowIntro(void)
         char pathName[DSK_PATH_MAX];
         bool showA;
 
-        if (setup.CDAudio) {
+        if (setup.CDAudioFromCD) {
             CDROM_StopAudioTrack();
+        }
+        if (setup.CDAudioFromWav) {
+            sndStopSpeechSample();
         }
 
         if (!dskBuildPathName(DISK_CHECK_FILE, "intropix", names[anims], pathName)) {
@@ -1787,22 +1790,48 @@ void ShowIntro(void)
                     sndPlaySound("title.bk", 0);
 	        }
 
-	        if (setup.CDAudio) {
-#if 0
-	            for (s = 0; s < MAX_TRACKS; s++) {
-	                if ((CDFrames[s * 6] == anims)
-	                    && (CDFrames[s * 6 + 1] == t)) {
-	                    NEOSOUNDSYSTEM(3, 16, 0x1f);        /* CMD 3: Fade to 0x1f */
+            if (setup.CDAudio) {
 
-	                    CDROM_StopAudioTrack();
-	                    if (CDFrames[s * 6 + 2] == 0)
-	                        CDROM_PlayAudioTrack((unsigned
-	                                              char)CDFrames[s*6+3]);
-	                    else
-	                        CDROM_PlayAudioSequence((unsigned char) CDFrames[s * 6 + 3], (unsigned long) CDFrames[s * 6 + 4], (unsigned long) CDFrames[s * 6 + 5]);
+	            for (s = 0; s < MAX_TRACKS; s++) {
+                    if ((CDFrames[s * 6] == anims)
+                        && (CDFrames[s * 6 + 1] == t)) {
+                        sndFading(16);
+
+                        if (setup.CDAudioFromCD) {
+                            CDROM_StopAudioTrack();
+                            if (CDFrames[s * 6 + 2] == 0)
+                                CDROM_PlayAudioTrack((unsigned char) CDFrames[s * 6 + 3]);
+                            else
+                                CDROM_PlayAudioSequence((unsigned char) CDFrames[s * 6 + 3],
+                                                        (unsigned long) CDFrames[s * 6 + 4],
+                                                        (unsigned long) CDFrames[s * 6 + 5]);
+                        } else if (setup.CDAudioFromWav) {
+                            const unsigned trackFlag = (unsigned) CDFrames[s * 6 + 2];
+                            const unsigned trackNumber = (unsigned) CDFrames[s * 6 + 3];
+                            const unsigned long startOffset = (unsigned long) CDFrames[s * 6 + 4];
+                            char wavClip[32];
+
+                            bool canPlay = false;
+                            if (trackFlag == 0) {
+                                canPlay = true;
+                            } else if (trackFlag != 0 && startOffset == 0) {
+                                /* Partial sequences unsupported, but allow zero-offset clips. */
+                                canPlay = true;
+                            }
+
+                            if (canPlay && trackNumber > 0) {
+                                snprintf(wavClip, sizeof(wavClip), "intro_%02u", trackNumber - 1);
+                                sndStopSpeechSample();
+                                if (!sndPlaySpeechSample(wavClip)) {
+                                    DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+                                             "Missing intro speech sample: %s.wav", wavClip);
+                                }
+                            }
+                        }
+
+                        break;
 	                }
 	            }
-#endif
 	        }
 
 	        endi = false;
@@ -1820,8 +1849,13 @@ endit:
 endit2:
     gfxClearArea(NULL);
 
-    if (setup.CDAudio) {
+    if (setup.CDAudioFromCD) {
         CDROM_StopAudioTrack();
+    }
+    if (setup.CDAudioFromWav) {
+        sndStopSpeechSample();
+    }
+    if (setup.CDAudio) {
         sndFading(0);
     }
 

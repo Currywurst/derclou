@@ -19,5 +19,10 @@ void sndFading(short int targetVol);
 
 char *sndGetCurrSoundName(void);
 
+bool sndSpeechLibraryAvailable(void);
+bool sndPlaySpeechSample(const char *clipName);
+void sndStopSpeechSample(void);
+bool sndSpeechSamplePlaying(void);
+
 #endif
 

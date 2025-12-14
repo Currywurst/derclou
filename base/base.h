@@ -95,6 +95,8 @@ struct Setup {
     S32 MusicVolume;
     unsigned Debug;
     bool CDAudio;
+    bool CDAudioFromCD;
+    bool CDAudioFromWav;
     unsigned Scale;
 };
 

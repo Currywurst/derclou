@@ -6,11 +6,15 @@
   publiclicensecontract.doc files which should be contained with this
   distribution.
  ****************************************************************************/
+#include <limits.h>
+#include <math.h>
+
 #include "SDL.h"
 
 #include "base/base.h"
 
 #include "sound/buffer.h"
+#include "sound/newsound.h"
 #include "sound/fx.h"
 #include "sound/hsc.h"
 
@@ -19,14 +23,27 @@ struct FXBase FXBase;
 static bool SfxChannelOn = false;
 static bool MusicChannelOn = true;
 
+typedef struct SpeechChannel {
+    S16 *samples;
+    size_t frames;
+    size_t cursor;
+    bool active;
+} SpeechChannel;
+
+static SpeechChannel Speech = { NULL, 0, 0, false };
+static bool SpeechDirChecked = false;
+static bool SpeechDirAvailable = false;
+
 static void LoadVOC(const char *fileName);
+static void SpeechFreeBufferUnlocked(void);
+static S16 SpeechNextSample(void);
 
 
 static void sndCallBack(void *udata, Uint8 *stream, int len)
 {
     S16 *MixStream = (S16 *) stream;
     const float sfxFactor = ((float)setup.SfxVolume) / SND_MAX_VOLUME,
-	    musicFactor = ((float)setup.MusicVolume) / SND_MAX_VOLUME;
+            musicFactor = ((float)setup.MusicVolume) / SND_MAX_VOLUME;
     int sizeStream, i;
 
     if (MusicChannelOn) {
@@ -47,7 +64,16 @@ static void sndCallBack(void *udata, Uint8 *stream, int len)
 	    sndRemoveBuffer(FXBase.pMusicBuffer, &Music, sizeof(Music));
 	}
 
-	MixStream[i] = sfxFactor*Sfx + musicFactor*Music + 0.5f;
+    float sample = sfxFactor * (float) Sfx + musicFactor * (float) Music;
+    sample += (float) SpeechNextSample();
+
+    if (sample > INT16_MAX) {
+        sample = INT16_MAX;
+    } else if (sample < INT16_MIN) {
+        sample = INT16_MIN;
+    }
+
+    MixStream[i] = (S16) sample;
     }
 }
 
@@ -86,6 +112,8 @@ void InitAudio(void)
 
 void RemoveAudio(void)
 {
+    sndStopSpeechSample();
+
     SDL_CloseAudio();
 
     if (SDL_WasInit(SDL_INIT_AUDIO) != 0) {
@@ -135,8 +163,153 @@ void sndPlayFX(void)
     SDL_UnlockAudio();
 }
 
+bool sndSpeechLibraryAvailable(void)
+{
+    if (!SpeechDirChecked) {
+        char dummy[DSK_PATH_MAX];
+
+        SpeechDirAvailable = dskBuildPathName(DISK_CHECK_DIR,
+                                             AUDIO_DIRECTORY,
+                                             "",
+                                             dummy);
+        SpeechDirChecked = true;
+    }
+
+    return SpeechDirAvailable;
+}
+
+bool sndPlaySpeechSample(const char *clipName)
+{
+    SDL_AudioSpec wavSpec;
+    Uint8 *wavBuffer = NULL;
+    Uint32 wavLength = 0;
+    SDL_AudioCVT cvt;
+    size_t frames;
+    char fileName[DSK_PATH_MAX];
+    char path[DSK_PATH_MAX];
+
+    if (!clipName || !clipName[0]) {
+        return false;
+    }
+
+    if (!sndSpeechLibraryAvailable()) {
+        return false;
+    }
+
+    snprintf(fileName, sizeof(fileName), "%s.wav", clipName);
+
+    if (!dskBuildPathName(DISK_CHECK_FILE, AUDIO_DIRECTORY, fileName, path)) {
+        DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+                 "Speech clip missing: %s", fileName);
+        return false;
+    }
+
+    if (!SDL_LoadWAV(path, &wavSpec, &wavBuffer, &wavLength)) {
+        DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+                 "SDL_LoadWAV failed for %s: %s",
+                 fileName, SDL_GetError());
+        return false;
+    }
+
+    if (SDL_BuildAudioCVT(&cvt,
+                          wavSpec.format, wavSpec.channels, wavSpec.freq,
+                          AUDIO_S16, 1, SND_FREQUENCY) < 0) {
+        DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+                 "SDL_BuildAudioCVT failed for %s: %s",
+                 fileName, SDL_GetError());
+        SDL_FreeWAV(wavBuffer);
+        return false;
+    }
+
+    cvt.len = wavLength;
+    cvt.buf = SDL_malloc((size_t) cvt.len * (size_t) cvt.len_mult);
+    if (!cvt.buf) {
+        SDL_FreeWAV(wavBuffer);
+        ErrorMsg(No_Mem, ERROR_MODULE_SOUND, 0);
+        return false;
+    }
+    memcpy(cvt.buf, wavBuffer, wavLength);
+    SDL_FreeWAV(wavBuffer);
+
+    if (SDL_ConvertAudio(&cvt) < 0) {
+        DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+                 "SDL_ConvertAudio failed for %s: %s",
+                 fileName, SDL_GetError());
+        SDL_free(cvt.buf);
+        return false;
+    }
+
+    frames = cvt.len_cvt / sizeof(S16);
+    if (!frames) {
+        SDL_free(cvt.buf);
+        return false;
+    }
+
+    SDL_LockAudio();
+    SpeechFreeBufferUnlocked();
+    Speech.samples = (S16 *) cvt.buf;
+    Speech.frames = frames;
+    Speech.cursor = 0;
+    Speech.active = true;
+    SDL_UnlockAudio();
+
+    return true;
+}
+
+void sndStopSpeechSample(void)
+{
+    SDL_LockAudio();
+    SpeechFreeBufferUnlocked();
+    SDL_UnlockAudio();
+}
+
+bool sndSpeechSamplePlaying(void)
+{
+    bool playing;
+
+    SDL_LockAudio();
+    playing = Speech.active;
+    SDL_UnlockAudio();
+
+    return playing;
+}
+
 static const char magicString[] =
     "Creative Voice File\x1a";
+
+static void SpeechFreeBufferUnlocked(void)
+{
+    if (Speech.samples) {
+        SDL_free(Speech.samples);
+        Speech.samples = NULL;
+    }
+
+    Speech.frames = 0;
+    Speech.cursor = 0;
+    Speech.active = false;
+}
+
+static S16 SpeechNextSample(void)
+{
+    S16 sample = 0;
+
+    if (!Speech.active || !Speech.samples) {
+        return 0;
+    }
+
+    if (Speech.cursor >= Speech.frames) {
+        SpeechFreeBufferUnlocked();
+        return 0;
+    }
+
+    sample = Speech.samples[Speech.cursor++];
+
+    if (Speech.cursor >= Speech.frames) {
+        SpeechFreeBufferUnlocked();
+    }
+
+    return sample;
+}
 
 static void LoadVOC(const char *fileName)
 {

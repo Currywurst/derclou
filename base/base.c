@@ -55,9 +55,13 @@ void tcDone(void)
         rndDone();
 
         if (setup.CDAudio) {
-            if (CDRomInstalled) {
-    	        CDROM_StopAudioTrack();
-    	        CDROM_UnInstall();
+            if (setup.CDAudioFromCD && CDRomInstalled) {
+	        CDROM_StopAudioTrack();
+	        CDROM_UnInstall();
+            }
+
+            if (setup.CDAudioFromWav) {
+                sndStopSpeechSample();
             }
         }
 
@@ -134,6 +138,8 @@ static char AutoDetectLanguage(void)
 
 static bool tcInit(void)
 {
+    bool speechAvailable;
+
     SDL_Init(0);
 
     if (setup.Debug >= ERR_DEBUG) {
@@ -151,11 +157,44 @@ static bool tcInit(void)
         return false;
     }
 
+    setup.CDAudioFromCD = false;
+    setup.CDAudioFromWav = false;
+
+    speechAvailable = sndSpeechLibraryAvailable();
+
     if (setup.CDAudio) {
-        if ((CDRomInstalled = CDROM_Install())) {
-            CDROM_WaitForMedia();
-            return false;
+        bool cdReady = false;
+        int installStatus = CDROM_Install();
+
+        if (installStatus == 1) {
+            if (CDROM_WaitForMedia() < 0) {
+                DebugMsg(ERR_WARNING, ERROR_MODULE_BASE,
+                         "CD/DVD not ready, disabling CD audio");
+                CDROM_UnInstall();
+            } else {
+                setup.CDAudioFromCD = true;
+                cdReady = true;
+            }
+        } else {
+            if (installStatus < 0) {
+                DebugMsg(ERR_WARNING, ERROR_MODULE_BASE,
+                         "No CD/DVD drive detected, disabling CD audio");
+            } else {
+                DebugMsg(ERR_WARNING, ERROR_MODULE_BASE,
+                         "\"The Clou!\" CD not found, disabling CD audio");
+            }
         }
+
+        if (!cdReady) {
+            if (speechAvailable) {
+                setup.CDAudioFromWav = true;
+            } else {
+                setup.CDAudio = false;
+            }
+        }
+    } else if (speechAvailable) {
+        setup.CDAudio = true;
+        setup.CDAudioFromWav = true;
     }
 
     gfxInit();
@@ -607,6 +646,8 @@ static void parseOptions(int argc, char *argv[])
     setup.CDRom         = false;
     setup.Debug         = 1;
     setup.CDAudio       = false;
+    setup.CDAudioFromCD = false;
+    setup.CDAudioFromWav = false;
     setup.Scale         = 1;
 
     for (i = 1; i < argc; i++) {
