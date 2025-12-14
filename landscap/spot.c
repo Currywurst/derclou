@@ -103,7 +103,7 @@ void lsShowAllSpots(U32 time, U32 mode)
 
 	    if (mode & LS_ALL_INVISIBLE_SPOTS)
 		if (spot->uch_Status & LS_SPOT_OFF)
-		    lsHideSpot(spot);	/* Spot (alte Position) l”schen */
+		    lsHideSpot(spot);	/* Spot (alte Position) loeschen */
 	}
     }
 }
@@ -116,12 +116,12 @@ void lsShowSpot(struct Spot *s, U32 time)
 	U32 count = (time / s->us_Speed);
 
 	/* wegen Ping-Pong dauert ein Zyklus doppelt so lang -> * 2 */
-	/* abzglich 2 (letztes und erstes kommen nur einmal        */
+	/* abzueglich 2 (letztes und erstes kommen nur einmal        */
 
 	if (s->us_PosCount > 1) {
 	    count = count % (s->us_PosCount * 2 - 2);
 
-	    if (count >= s->us_PosCount)	/* Sonderfall Rckw„rts! (in Ping Pong) */
+	    if (count >= s->us_PosCount)	/* Sonderfall Rueckwaerts! (in Ping Pong) */
 		count = (s->us_PosCount * 2 - 2) - count;
 	} else
 	    count = 0;
@@ -129,7 +129,7 @@ void lsShowSpot(struct Spot *s, U32 time)
 	s->p_CurrPos = pos =
 	    (struct SpotPosition *) GetNthNode(s->p_positions, count);
 
-	/* alte Position l”schen */
+	/* alte Position loeschen */
 	lsHideSpot(s);
 
 	/* Spot setzen */
@@ -142,7 +142,7 @@ void lsShowSpot(struct Spot *s, U32 time)
 
 void lsHideSpot(struct Spot *s)
 {
-    /* den alten Spot l”schen!  */
+    /* den alten Spot loeschen!  */
     if ((s->us_OldXPos != (uword) - 1) && (s->us_OldYPos != (uword) - 1))
 	lsBlitSpot(s->us_Size, s->us_OldXPos, s->us_OldYPos, 0);
 }

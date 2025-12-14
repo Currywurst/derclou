@@ -1,9 +1,23 @@
 cmake_minimum_required(VERSION 3.16)
 project(derclou C)
 
-set(CMAKE_C_STANDARD 90)
+set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Remove stale linker paths that point to Homebrew-only locations that may
+# not exist on the current machine.
+foreach(flag_var IN ITEMS
+        CMAKE_EXE_LINKER_FLAGS
+        CMAKE_SHARED_LINKER_FLAGS
+        CMAKE_MODULE_LINKER_FLAGS)
+    if(${flag_var} MATCHES "/usr/local/opt/openssl/lib")
+        string(REPLACE "-L/usr/local/opt/openssl/lib" "" cleaned_flag "${${flag_var}}")
+        string(REGEX REPLACE "  +" " " cleaned_flag "${cleaned_flag}")
+        set(${flag_var} "${cleaned_flag}" CACHE STRING "" FORCE)
+    endif()
+endforeach()
 
 find_package(SDL2 REQUIRED)
 
@@ -89,5 +103,4 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 # Link SDL2 and libm just like the original build.
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL2::SDL2
-    m
 )

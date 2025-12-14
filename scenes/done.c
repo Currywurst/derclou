@@ -94,7 +94,7 @@ void DoneInsideHouse(void)
 
     areaID = OL_NR(LIST_HEAD(ObjectList));
     lsLoadGlobalData(buildingID, areaID);	/* Stechuhren und so... */
-    /* muá nur einmal geladen werden.. */
+    /* must be loaded only once */
 
     lsSetRelations(areaID);
 
@@ -343,7 +343,7 @@ void tcInitFahndung(void)
 {
     Player player = dbGetObject(Player_Player_1);
 
-    tcMattGoesTo(59);		/* Bro */
+    tcMattGoesTo(59);		/* office */
 
     player->NrOfBurglaries++;
 }
@@ -372,7 +372,7 @@ void tcDoneFahndung(void)
 
 /*
  * ein schlimmer Murks, aber anders geht s nicht!
- * und, .... die ganze Scheiáe nur wegen den Knochen
+ * und, .... the whole mess only because of the bones
  */
 
 void DoneHotelRoom(void)

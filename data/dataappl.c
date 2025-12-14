@@ -106,7 +106,7 @@ void tcCalcCallValue(U32 callNr, U32 timer, U32 persId)
 /* Berechnet �berschlagsm���ig den Ausgang der Flucht */
 /* basiert alleine auf den Koordinaten */
 /* vernachl�ssigt Stockwerke und Personen */
-S32 tcCalcEscapeTime()
+S32 tcCalcEscapeTime(void)
 {
     S32 time = 0, i;
     Building build = dbGetObject(Search.BuildingId);

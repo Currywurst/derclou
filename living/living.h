@@ -51,11 +51,11 @@
 #include "living/bob.h"
 #endif
 
-/* defines fÅr AnimPlayMode */
+/* defines for AnimPlayMode */
 #define LIV_PM_NORMAL    	1
 #define LIV_PM_REVERSE   	2
 
-/* defines fÅr Action */
+/* defines for Action */
 #define ANM_MOVE_UP 	   	((ubyte)0)
 #define ANM_MOVE_DOWN	   ((ubyte)1)
 #define ANM_MOVE_RIGHT	   ((ubyte)2)

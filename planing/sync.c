@@ -388,12 +388,12 @@ void plSync(ubyte animate, U32 targetTime, U32 times, ubyte direction)
 								 ItemId), 1);
 					    }
 					} else {
-					    if ((((LSObject)
-						  dbGetObject(ActionData
-							      (action,
-							       struct ActionUse
-							       *)->ItemId))->
-						 Type == Item_Fenster)) {
+					    if (((LSObject)
+					      dbGetObject(ActionData
+						  (action,
+						   struct ActionUse
+						   *)->ItemId))->
+						 Type == Item_Fenster) {
 						lsWalkThroughWindow((LSObject)
 								    dbGetObject
 								    (ActionData

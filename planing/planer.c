@@ -1173,8 +1173,8 @@ static void plActionUse(void)
 						      PLANING_MSG_WAIT);
 				    }
 				} else
-				    if ((((LSObject) dbGetObject(choice1))->
-					 Type == Item_Fenster)) {
+				    if (((LSObject) dbGetObject(choice1))->Type ==
+					Item_Fenster) {
 
                                     if (setup.Profidisk && Planing_BldId == Building_Postzug)
                                         plSay("PLANING_TRAIN", CurrentPerson);

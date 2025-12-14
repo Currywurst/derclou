@@ -56,6 +56,8 @@ SDL_Window *sdlWindow;
 SDL_Renderer *sdlRenderer;
 SDL_Texture *sdlTexture;
 
+ubyte DecrBuffer[GFX_DECR_BUFFER_SIZE] = {0};
+
 typedef struct FrameClock {
     bool initialized;
     double targetFrameMs;

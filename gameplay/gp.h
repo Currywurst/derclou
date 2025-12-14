@@ -99,8 +99,8 @@ struct Film {
     U32 StartZeit;		/* =Tag seit dem Jahr 0 */
     U32 StartOrt;
 
-    U32 akt_Tag;
     U32 akt_Minute;
+    U32 akt_Tag;
     U32 akt_Ort;
     U32 alter_Ort;
 
@@ -111,29 +111,25 @@ struct Film {
 
 struct SceneArgs {
     U32 Moeglichkeiten;
-    U32 ReturnValue;		/* wird AUCH (!) als Input verwendet,
-				 * wenn als Output verwendet = EventNr der
-				 * Nachfolgerszene
-				 */
-    ubyte Ueberschrieben;	/*  0...direkter Nachfahre,
-				 * >0......uberschriebene Methode
-				 */
+    U32 ReturnValue;	/* also used as input; when treated as output it
+			 * contains the successor scene's EventNr
+			 */
+    ubyte Ueberschrieben;	/* 0 = direct successor, 1 = overwritten */
 };
-
 struct Scene {
     U32 EventNr;
 
     void (*Init) (void);
     void (*Done) (void);
 
-    struct Bedingungen *bed;	/* damit das Ereignis eintritt */
+    struct Bedingungen *bed;	/* so that the event occurs */
 
-    LIST *std_succ;		/* Standardnachfolger TCEventNode */
+    LIST *std_succ;	/* Standardnachfolger TCEventNode */
 
     U32 Moeglichkeiten;		/* siehe defines oben                   */
-    U32 Dauer;			/* Dauer dieser Szene in Sekunden       */
+    U32 Dauer;		/* Dauer dieser Szene in Sekunden       */
     uword Anzahl;		/* wie oft sie geschehen kann           */
-    uword Geschehen;		/* wie oft sie SCHON geschehen ist */
+    uword Geschehen;	/* wie oft sie SCHON geschehen ist */
     ubyte Probability;		/* mit der sie eintritt         0-255   */
 
     U32 LocationNr;		/* Ort, den diese Szene darstellt       */
@@ -142,10 +138,10 @@ struct Scene {
 };
 
 struct Bedingungen {
-    U32 Ort;			/* der erfÅllt sein mu· */
+    U32 Ort;		/* condition that must be fulfilled */
 
-    LIST *events;		/* welche Events schon geschehen sein muessen */
-    LIST *n_events;		/* Events, die nicht geschehen sein dÅrfen */
+    LIST *events;		/* events that have to happen */
+    LIST *n_events;		/* events that must not happen */
 };
 
 struct TCEventNode {

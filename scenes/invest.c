@@ -137,7 +137,7 @@ void Investigate(char *location)
 	if ((GetMinute % patrolCount) == 0)
 	    choice = tcShowPatrol(bubble_l, c_time, patr, first++, bui, raise);
 
-	/* šberprfen ob zur aktuellen Zeit (time) etwas geschieht : */
+	/* Ueberpruefen ob zur aktuellen Zeit (time) etwas geschieht : */
 	if (!choice) {
 	    if (strncmp(NODE_NAME(nextMsg), c_time, 5) == 0) {
 		if ((GetMinute % 60) != 0)
@@ -161,7 +161,7 @@ void Investigate(char *location)
 	    }
 	}
 
-	/* Zeit erh”hen und nach dem Spieler sehen ! */
+	/* Zeit erhoehen und nach dem Spieler sehen ! */
 	if (CalcRandomNr(0L, 6L) == 1)
 	    tcAddBuildStrike(bui, 1);
 
@@ -187,10 +187,10 @@ void Investigate(char *location)
     Present(buiID, "Building", InitBuildingPresent);
 
     /* Im Plan dazuaddieren : wie lange beobachtet */
-    /* wenn Geb„iude 2 mal beobachtet wird -> Auff„llig !! */
-    /* Auff„llugkeitgrad erh”hen */
+    /* wenn Gebaeiude 2 mal beobachtet wird -> Auffaellig !! */
+    /* Auffaellugkeitgrad erhoehen */
     /* Ergebnisse ! (Genauigkeit) */
-    /* Abschluábericht zeigen ! */
+    /* Abschlussbericht zeigen ! */
 
     ShowMenuBackground();
     tcRefreshLocationInTitle(GetLocation);

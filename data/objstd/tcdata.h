@@ -136,6 +136,10 @@
 #define livesInGet(l,r)       GetP   (dbGetObject (l), 10, dbGetObject (r))
 
 #define Relation_break      11
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wkeyword-macro"
+#endif
 #define breakP(l,r,p,c)     AskP   (dbGetObject (l), 11, dbGetObject (r), p, c)
 #define break(l,r)          AskP   (dbGetObject (l), 11, dbGetObject (r), NO_PARAMETER, CMP_NO)
 #define breakAll(l,f,t)     { SetObjectListAttr (f,t); AskAll (dbGetObject (l), 11, BuildObjectList); }
@@ -143,6 +147,9 @@
 #define breakSet(l,r)       SetP   (dbGetObject (l), 11, dbGetObject (r), NO_PARAMETER)
 #define breakUnSet(l,r)     UnSet  (dbGetObject (l), 11, dbGetObject (r))
 #define breakGet(l,r)       GetP   (dbGetObject (l), 11, dbGetObject (r))
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #define Relation_hurt      12
 #define hurtP(l,r,p,c)     AskP   (dbGetObject (l), 12, dbGetObject (r), p, c)

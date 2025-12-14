@@ -12,7 +12,7 @@
 /****************************************************************************
   Portions copyright (c) 2005 Vasco Alexandre da Silva Costa
 
-  Please read the license terms contained in the LICENSE and
+*	Breite, Animphase Hoehe, Animphase offset, PlayMode
   publiclicensecontract.doc files which should be contained with this
   distribution.
  ****************************************************************************/
@@ -21,7 +21,7 @@
  * Aufbau der Anim.List Datei (Aufbau einer Zeile)
  *
  * 	PictureMode,PictsPerSecc,Pic1,AnimPic,PicAnzahl,Animphase
- *	Breite, Animphase H”he, Animphase offset, PlayMode
+ *	Breite, Animphase Hï¿½he, Animphase offset, PlayMode
  *	XDest, YDest (als Offset zum 1. Bild)
  */
 

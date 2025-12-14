@@ -696,12 +696,12 @@ static void plPlayerAction(void)
 								 struct
 								 ActionUse *)->
 								ItemId))->Type);
-				    else if ((((LSObject)
-					       dbGetObject(ActionData
-							   (PD.action,
-							    struct ActionUse
-							    *)->ItemId))->
-					      Type == Item_Fenster))
+				    else if (((LSObject)
+				       dbGetObject(ActionData
+					   (PD.action,
+					    struct ActionUse
+					    *)->ItemId))->Type ==
+				      Item_Fenster)
 					 PD.currLoudness[i] =
 					    PLANING_LOUDNESS_STD;
 				    else if (!plIgnoreLock
@@ -910,12 +910,12 @@ static void plPlayerAction(void)
 									   *)->
 								ItemId);
 				    } else {
-					if ((((LSObject)
-					      dbGetObject(ActionData
-							  (PD.action,
-							   struct ActionUse *)->
-							  ItemId))->Type ==
-					     Item_Fenster)) {
+				    if (((LSObject)
+				      dbGetObject(ActionData
+					  (PD.action,
+					   struct ActionUse *)->
+					  ItemId))->Type ==
+				     Item_Fenster) {
 					    uword xpos, ypos;
 
 					    lsWalkThroughWindow((LSObject)
@@ -1869,7 +1869,7 @@ S32 plPlayer(U32 objId, U32 actionTime, ubyte(*actionFunc) (U32, U32))
 		}
 
 		SetMenuTimeOutFunc(NULL);
-		inpSetWaitTicks(0);	/* normales Ausmaá */
+		inpSetWaitTicks(0);	/* normales Ausmaï¿½ */
 
 		Search.LastAreaId = lsGetActivAreaID();
 		Search.TimeOfBurglary = PD.realTime;

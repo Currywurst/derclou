@@ -283,6 +283,9 @@ dbRWStdObject(void *obj, int RW, U32 type, U32 size, U32 localSize, FILE *fp)
 	S32LE_RW = dskWrite_S32LE;
     }
 
+    (void)S16LE_RW;
+    (void)S32LE_RW;
+
     switch (type) {
 	/* tcMain */
     case Object_Person:
@@ -740,6 +743,9 @@ dbRWProfiObject(void *obj, int RW, U32 type, U32 size, U32 localSize, FILE *fp)
 	U32LE_RW = dskWrite_U32LE;
 	S32LE_RW = dskWrite_S32LE;
     }
+
+    (void)S16LE_RW;
+    (void)S32LE_RW;
 
     switch (type) {
 	/* tcMain */

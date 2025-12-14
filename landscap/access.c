@@ -157,12 +157,12 @@ ubyte lsGetLoudness(uword x, uword y)
 {
     word floorIndex = lsGetFloorIndex(x, y), i, j, k;
 
-    /* Ursprnglich wurde loudness hier mit MaxVolume initialisiert    */
+    /* Urspruenglich wurde loudness hier mit MaxVolume initialisiert    */
     /* dadurch waren in der Anzeige der Loudness auch die Nachbarn     */
-    /* inbegriffen waren. Nebenwirkung: Es gab aber pl”tzlich, sobald  */
-    /* man die Lautst„rke berschritt Alarm durch Mikrophone ->        */
-    /* tcAlarmByMicro, bei einer Žnderung der Initialiserung, muá auch */
-    /* TcAlarmByMicro ge„ndert werden.   (hg, 14-02-94)                */
+    /* inbegriffen waren. Nebenwirkung: Es gab aber ploetzlich, sobald  */
+    /* man die Lautstaerke ueberschritt Alarm durch Mikrophone ->        */
+    /* tcAlarmByMicro, bei einer Aenderung der Initialiserung, muss auch */
+    /* TcAlarmByMicro geaendert werden.   (hg, 14-02-94)                */
     ubyte loudness = 255;
 
     if ((!LS_NO_FLOOR(gLandscapeState->p_CurrFloor[floorIndex].uch_FloorType)) &&
