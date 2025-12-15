@@ -115,7 +115,7 @@ ubyte tcLoadIt(char activ)
     txtGetFirstLine(THECLOU_TXT, "LOADING", line);
     PrintStatus(line);
 
-    /* alte Daten loeschen */
+    /* alte Daten löschen */
 
     tcResetOrganisation();
 

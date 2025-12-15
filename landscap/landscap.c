@@ -118,7 +118,7 @@ void lsBuildScrollWindow(void)
 	}
     }
 
-    /* Objekte setzen - zuerst W�nde */
+    /* Objekte setzen - zuerst Wände */
     for (node = (NODE *) LIST_HEAD(gLandscapeState->p_ObjectRetrieval); NODE_SUCC(node);
 	 node = (NODE *) NODE_SUCC(node)) {
 	LSObject lso = OL_DATA(node);
@@ -137,7 +137,7 @@ void lsBuildScrollWindow(void)
 	    lsTurnObject(lso, lso->uch_Visible, LS_COLLISION);
     }
 
-    /* jetzt noch ein paar Sondef�lle (Kassa, Vase, ...) */
+    /* jetzt noch ein paar Sondefälle (Kassa, Vase, ...) */
     for (node = (NODE *) LIST_HEAD(gLandscapeState->p_ObjectRetrieval); NODE_SUCC(node);
 	 node = (NODE *) NODE_SUCC(node)) {
 	LSObject lso = OL_DATA(node);
@@ -337,7 +337,7 @@ static void lsSortObjectList(LIST ** l)
 
 	    /* wenn Abbruch wegen NODE_SUCC(NODE_SUCC(.. erflogte, darf
 	     * nicht der NODE_PRED(node1) genomen werden!
-	     * nach dem Sortieren ist au�erdem Schlu�!
+	     * nach dem Sortieren ist außerdem Schluß!
 	     */
 
 	    if ((lso1->us_DestY != lso2->us_DestY))

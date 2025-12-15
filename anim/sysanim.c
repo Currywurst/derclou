@@ -34,16 +34,16 @@
 #define	Y_DEST_OFFSET_POS	UINT16_C(10)
 #define	PLAY_MODE_POS		UINT16_C(11)
 
-/* Defines f�r Playmode */
+/* Defines für Playmode */
 #define	PM_NORMAL			     1
 #define	PM_PING_PONG		     2
 #define  PM_SYNCHRON            4
 
-/* Defines f�r AnimPic Aufbau */
+/* Defines für AnimPic Aufbau */
 #define 	Y_OFFSET		           0	/* 1 Pixel zwischen 2 Reihen */
 
 struct AnimHandler {
-    char *RunningAnimID;	/* Anim, die gerade l�uft */
+    char *RunningAnimID;	/* Anim, die gerade läuft */
 
     U16 destX;
     U16 destY;
@@ -319,7 +319,7 @@ void animator(void)
                         else
                             sourceY = 0;
 
-			/* sicherstellen, da� Animframes immer vorhanden sind */
+			/* sicherstellen, daß Animframes immer vorhanden sind */
 
 			inpMousePtrOff();
 

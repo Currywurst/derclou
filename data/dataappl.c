@@ -20,9 +20,9 @@
 static S32 tcGetWeightOfNerves(S32 teamMood);
 static bool tcIsConnectedWithEnabledAlarm(U32 lsoId);
 
-#define tcESCAPE_MOOD         30	/* ab hier fl�chtet einer ! */
+#define tcESCAPE_MOOD         30	/* ab hier flüchtet einer ! */
 #define tcWALK_LOUDNESS       20
-#define tcPATROL_ALARM        5	/* ab 5 % ver�nderte Objekte schl�gt Patrolie Alarm */
+#define tcPATROL_ALARM        5	/* ab 5 % veränderte Objekte schlägt Patrolie Alarm */
 
 #define tcPIXEL_PER_SECCOND   4
 
@@ -103,9 +103,9 @@ void tcCalcCallValue(U32 callNr, U32 timer, U32 persId)
     Search.CallValue = ChangeAbs(Search.CallValue, good, -500, 500);
 }
 
-/* Berechnet �berschlagsm���ig den Ausgang der Flucht */
+/* Berechnet überschlagsmääßig den Ausgang der Flucht */
 /* basiert alleine auf den Koordinaten */
-/* vernachl�ssigt Stockwerke und Personen */
+/* vernachlässigt Stockwerke und Personen */
 S32 tcCalcEscapeTime(void)
 {
     S32 time = 0, i;
@@ -124,7 +124,7 @@ S32 tcCalcEscapeTime(void)
 	}
     }
 
-    time /= 4;			/* Fluchtzeit k�rzen - war zu lang! */
+    time /= 4;			/* Fluchtzeit kürzen - war zu lang! */
 
     return time;
 }
@@ -261,7 +261,7 @@ U32 tcGetPersOffer(Person person, U8 persCount)
 
     Pers = (Person) dbGetObject(persID);
 
-    /* F�higkeiten der Person */
+    /* Fähigkeiten der Person */
     if ((i = hasGet(persID, Ability_Autos)) != NO_PARAMETER)
 	persCapability += i;
     if ((i = hasGet(persID, Ability_Sprengstoff)) != NO_PARAMETER)
@@ -275,7 +275,7 @@ U32 tcGetPersOffer(Person person, U8 persCount)
     if ((i = hasGet(persID, Ability_Schloesser)) != NO_PARAMETER)
 	persCapability += i;
 
-    /* F�higkeiten von Matt */
+    /* Fähigkeiten von Matt */
     if ((i = hasGet(Person_Matt_Stuvysunt, Ability_Autos)) != NO_PARAMETER)
 	mattCapability += i;
     if ((i =
@@ -295,7 +295,7 @@ U32 tcGetPersOffer(Person person, U8 persCount)
 
     /* MOD 18-02-04 HG 92 statt 100 (Marx Testspielempfehlung) */
     offer = 100 / persCount;	/* sein Anteil bei gleichen Teilen */
-    offer = (offer * assesment) / 92;	/* ... gewichtet mit F�higkeiten   */
+    offer = (offer * assesment) / 92;	/* ... gewichtet mit Fähigkeiten   */
 
     /* Beispiel zu oben: 2 Personen -> offer = 50, assesment = 200 */
     /* (andere Person ist "zweimal so gut") -> offer = 50 * 300 / 200 = 75 % */
@@ -317,7 +317,7 @@ void tcPersonLearns(U32 pId)
 
     for (n = (struct ObjectNode *) LIST_HEAD(ObjectList); NODE_SUCC(n);
 	 n = (struct ObjectNode *) NODE_SUCC(n)) {
-	ability = hasGet(pId, OL_NR(n));	/* Jetztzustand der F�higkeit */
+	ability = hasGet(pId, OL_NR(n));	/* Jetztzustand der Fähigkeit */
 
 	if (learned(pId, OL_NR(n))) {	/* er hat dazugelernt ! */
 	    count = learnedGet(pId, OL_NR(n));	/* wie oft er gelernt hat ! */
@@ -363,7 +363,7 @@ U32 tcGetBuildValues(Building bui)
 
 /*
  * Berechnet Teamstimmung
- * zu verwenden f�r Anzeige der Teamstimmung
+ * zu verwenden für Anzeige der Teamstimmung
  * 0 - 255
  */
 
@@ -385,8 +385,8 @@ S32 tcGetTeamMood(U32 * guyId, U32 timer)
 }
 
 /*
- * retourniert neuen Ersch�pfungszustand eines Einbrechers
- * Aufzurufen, wenn Person Aktion durchf�hrt
+ * retourniert neuen Erschöpfungszustand eines Einbrechers
+ * Aufzurufen, wenn Person Aktion durchführt
  * nur alle x Aktionsschritte aufrufen !
  */
 
@@ -395,7 +395,7 @@ S32 tcGuyInAction(U32 persId, S32 exhaustion)
     S32 state = tcGetGuyState(persId);
 
     if (CalcRandomNr(0, 15) == 1)
-	state = (255 - state) / 90;	/* Ersch�pfungszuwachs = Invers von Zustand */
+	state = (255 - state) / 90;	/* Erschöpfungszuwachs = Invers von Zustand */
     else
 	state = 0;
 
@@ -403,7 +403,7 @@ S32 tcGuyInAction(U32 persId, S32 exhaustion)
 }
 
 /*
- * Setzt die Ersch�pfungsabnahme eines Einbrechers
+ * Setzt die Erschöpfungsabnahme eines Einbrechers
  * Aufzurufen, wenn Person wartet
  * nur alle x Warteschritte aufrufen !
  */
@@ -413,7 +413,7 @@ S32 tcGuyIsWaiting(U32 persId, S32 exhaustion)
     S32 state = tcGetGuyState(persId);
 
     if (CalcRandomNr(0, 4) == 1)
-	state = state / 10;	/* Ersch�pfungsabnahme */
+	state = state / 10;	/* Erschöpfungsabnahme */
     else
 	state = 0;
 
@@ -427,10 +427,10 @@ S32 tcGuyIsWaiting(U32 persId, S32 exhaustion)
  */
 /* bei jeder Warnung eines Aufpasser , wird dieser Wert nach unten */
 /* korriegiert */
-/* R�ckgabewert steigt mit Zunahme der Zeit (Einbrecher werden immer
+/* Rückgabewert steigt mit Zunahme der Zeit (Einbrecher werden immer
 	selbstsicherer
-	udn sinkt mit der Differenz der Realit�t zum Plan!
-	durch Funkspr�che diesen R�ckgabewert beeinflussssen!
+	udn sinkt mit der Differenz der Realität zum Plan!
+	durch Funksprüche diesen Rückgabewert beeinflussssen!
 */
 
 S32 tcIsPlanPerfect(U32 timer)
@@ -463,7 +463,7 @@ S32 tcGetTrail(Person p, U8 which)
 	trail = CalcValue(trail, 0, 255, 255 - p->Health, 10);
 	break;
     case 1:			/* Wait */
-	trail = (p->Panic) / 4;	/* umso gr��er Panik umso mehr Spuren! */
+	trail = (p->Panic) / 4;	/* umso größer Panik umso mehr Spuren! */
 	break;
     case 2:			/* Work */
 	trail = (255 - p->Skill) / 4;
@@ -527,7 +527,7 @@ static U32 tcGetNecessaryAbility(U32 persId, U32 toolId)
 }
 
 /*
- * Berechnet Zeit, die Einbrecher f�r eine Aktion ben�tigt
+ * Berechnet Zeit, die Einbrecher für eine Aktion benötigt
  */
 
 U32 tcGuyUsesToolInPlayer(U32 persId, Building b, U32 toolId, U32 itemId,
@@ -548,7 +548,7 @@ U32 tcGuyUsesToolInPlayer(U32 persId, Building b, U32 toolId, U32 itemId,
 
 U32 tcGuyUsesTool(U32 persId, Building b, U32 toolId, U32 itemId)
 	/*
-	 * diese Funktion darf keine Zuf�lligkeit enthalten -> Sync!!
+	 * diese Funktion darf keine Zufälligkeit enthalten -> Sync!!
 	 */
 {
     U32 origin, time;
@@ -679,7 +679,7 @@ S32 tcGetDanger(U32 persId, U32 toolId, U32 itemId)
 }
 
 /*
- * berechnet die Lautst�rke einer Aktion
+ * berechnet die Lautstärke einer Aktion
  *
  */
 
@@ -695,7 +695,7 @@ S32 tcGetToolLoudness(U32 persId, U32 toolId, U32 itemId)
 }
 
 /*
- * berechnet die Lautst�rke vom Gehen
+ * berechnet die Lautstärke vom Gehen
  */
 
 S32 tcGetWalkLoudness(void)
@@ -709,7 +709,7 @@ S32 tcGetWalkLoudness(void)
 }
 
 /*
- * berechnet Lautst�rkenpegel aller 4 Einbrecher
+ * berechnet Lautstärkenpegel aller 4 Einbrecher
  */
 
 S32 tcGetTotalLoudness(S32 loudp0, S32 loudp1, S32 loudp2, S32 loudp3)
@@ -720,15 +720,15 @@ S32 tcGetTotalLoudness(S32 loudp0, S32 loudp1, S32 loudp2, S32 loudp3)
     total = max(total, loudp2);
     total = max(total, loudp3);
 
-    total = CalcValue(total, 0, 255, 255, 20);	/* um ca 20 % erh�hen */
+    total = CalcValue(total, 0, 255, 255, 20);	/* um ca 20 % erhöhen */
 
     return (total);
 }
 
 /*
  * stellen fest, ob ein Funkspruch aufgefangen oder
- * ob durch die Lautst�rke ein Passant, Nachbar die Polizei alarmiert wurde
- * wenn diese Funktionen 1 zur�ckliefern, ab jetzt st�ndig WatchDog
+ * ob durch die Lautstärke ein Passant, Nachbar die Polizei alarmiert wurde
+ * wenn diese Funktionen 1 zurückliefern, ab jetzt ständig WatchDog
  * aufrufen
  */
 
@@ -757,13 +757,13 @@ bool tcAlarmByPatrol(U16 objChangedCount, U16 totalCount, U8 patrolCount)
 	return false;
 }
 
-/* f�r jedes Objekt, das vom W�chter kontrolliert wird, aufrufen! */
+/* für jedes Objekt, das vom Wächter kontrolliert wird, aufrufen! */
 /* wenn 1 -> richtiger Alarm! */
 
 bool tcGuardChecksObject(LSObject lso)
 {
-    /* hier darf NICHT das OPEN_CLOSE_BIT sonst, schl�gt der W�chter */
-    /* Alarm, wenn er eine T�r �ffnet!                               */
+    /* hier darf NICHT das OPEN_CLOSE_BIT sonst, schlägt der Wächter */
+    /* Alarm, wenn er eine Tür öffnet!                               */
     if ((lso->ul_Status & (1 << Const_tcIN_PROGRESS_BIT)) ||
 	(lso->ul_Status & (1 << Const_tcLOCK_UNLOCK_BIT)))
 	return true;
@@ -773,8 +773,8 @@ bool tcGuardChecksObject(LSObject lso)
 	case Item_Alarmanlage_X3:
 	case Item_Alarmanlage_Top:
 	case Item_Steuerkasten:
-	    /* hier darf NICHT das OPEN_CLOSE_BIT gepr�ft werden */
-	    /* sonst schl�gt der W�chter Alarm, wenn er es �ffnet! */
+	    /* hier darf NICHT das OPEN_CLOSE_BIT geprüft werden */
+	    /* sonst schlägt der Wächter Alarm, wenn er es öffnet! */
 	    if (lso->ul_Status & (1 << Const_tcON_OFF))
 		return true;
 	    break;
@@ -826,7 +826,7 @@ bool tcAlarmByMicro(U16 us_XPos, U16 us_YPos, S32 loudness)
 }
 
 /*
- * sobald ein Alarm Marke "Nachbar" existiert, f�r jeden Aufpasser, der gerade
+ * sobald ein Alarm Marke "Nachbar" existiert, für jeden Aufpasser, der gerade
  * wartet, diese Funktion aufrufen
  * wenn diese Funktion 1 retourniert -> Aufpasser hat etwas bemerkt ->
  * Warnung an Matt !
@@ -839,7 +839,7 @@ bool tcWatchDogWarning(U32 persId)
 
     random = CalcRandomNr(0, 200) +	/* Joe soll nicht gleich in der ersten */
 	CalcRandomNr(0, 200) +	/* Sekunde etwas bemerken!             */
-	CalcRandomNr(0, 200);	/* Risiko wird durch Addition GR��ER!! */
+	CalcRandomNr(0, 200);	/* Risiko wird durch Addition GRÖßER!! */
 
     if ((watch > random) && (CalcRandomNr(0, 40) == 1))
 	return true;
@@ -848,7 +848,7 @@ bool tcWatchDogWarning(U32 persId)
 }
 
 /*
- * sobald KEIN Alarm Marke "Nachbar" existiert, f�r jeden Aufpasser, der
+ * sobald KEIN Alarm Marke "Nachbar" existiert, für jeden Aufpasser, der
  * gerade wartet, diese Funktion aufrufen (Fehlalarm)
  */
 
@@ -872,7 +872,7 @@ bool tcIsCarRecognised(Car car, U32 time)
     /* Zeit spielt eine Rolle ! */
     /* nach einer Viertelstunde mit Alarm, ist Strike == 255 */
 
-    weight = 127 + CalcValue(time / 8, 0, 127, 0, 0);	/* nur wegen Bereichs�berpr�fung */
+    weight = 127 + CalcValue(time / 8, 0, 127, 0, 0);	/* nur wegen Bereichsüberprüfung */
     strike = CalcValue(strike, 0, 255, weight, 100);
 
     if ((strike > 220)
@@ -920,7 +920,7 @@ S32 tcCalcMattsPart(void)
     return 100 - part;
 }
 
-/* immer wenn eine Stechuhr bet�tigt wird */
+/* immer wenn eine Stechuhr betätigt wird */
 
 void tcRefreshTimeClock(U32 buildId, U32 timerId)
 {
@@ -986,9 +986,9 @@ static bool tcInsideSameRoom(LIST * roomsList, S16 polX, S16 polY, S16 livX,
     return detected;
 }
 
-/* F�r jeden(?) Schritt einer f�r JEDEN Einbrecher aufrufen */
+/* Für jeden(?) Schritt einer für JEDEN Einbrecher aufrufen */
 /* LivingName = names des Einbrechers */
-/* XPos, YPos = Position des W�chters */
+/* XPos, YPos = Position des Wächters */
 /* wenn 1 -> Alarm! */
 
 bool tcGuardDetectsGuy(LIST * roomsList, U16 us_XPos, U16 us_YPos,
@@ -1011,7 +1011,7 @@ bool tcGuardDetectsGuy(LIST * roomsList, U16 us_XPos, U16 us_YPos,
 }
 
 /* jedesmal aufrufen, wenn ein Objekt bearbeitet wird */
-/* �berpr�ft, ob dieses Objekt mit einer Alarmanlafe verbunden ist */
+/* überprüft, ob dieses Objekt mit einer Alarmanlafe verbunden ist */
 /* 1 -> Alarm */
 
 bool tcAlarmByTouch(U32 lsoId)
@@ -1026,7 +1026,7 @@ bool tcAlarmByTouch(U32 lsoId)
 }
 
 
-/* kontrolliert, ob durch Stromverlust ein Alarm ausgel�st wird
+/* kontrolliert, ob durch Stromverlust ein Alarm ausgelöst wird
  * jedesmal aufrufen, wenn ein Steuerkasten ausgeschaltet wird!
  * wenn 1 -> Alarm
  */

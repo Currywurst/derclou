@@ -126,7 +126,7 @@ extern void tcInsertGuard(LIST * list, LIST * roomsList, U16 x, U16 y,
 #define   tcGetPersMood(p)              (((Person)p)->Mood)
 
 #define   tcWeightPersCanCarry(p)       (((S32)(p)->Stamina + (S32)(p)->Strength) * 200)	/* 0 - 100000 (100 kg) in gramm ! */
-#define   tcVolumePersCanCarry(p)       (((S32)(p)->Stamina + (S32)(p)->Strength) * 200)	/* in cm3 -> max 1 m3 f�r eine Person */
+#define   tcVolumePersCanCarry(p)       (((S32)(p)->Stamina + (S32)(p)->Strength) * 200)	/* in cm3 -> max 1 m3 für eine Person */
 
 #define   tcImprovePanic(p, v)          ((p)->Panic = (p)->Panic - ((p)->Panic / (v)))
 #define   tcImproveKnown(p, v)          ((p)->Known = min(255, (v)))

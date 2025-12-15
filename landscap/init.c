@@ -338,7 +338,7 @@ void lsDoneObjectDB(U32 areaID)
     RemRelations(area->ul_ObjectBaseNr, DB_tcBuild_SIZE);
     dbDeleteAllObjects(area->ul_ObjectBaseNr, DB_tcBuild_SIZE);
 
-    /* globale Relation wieder l�schen */
+    /* globale Relation wieder löschen */
     RemRelations(Relation_hasClock - 1, 3);
 
     /* und die "Relationsheader" wieder anlegen */

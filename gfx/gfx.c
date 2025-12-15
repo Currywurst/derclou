@@ -183,14 +183,14 @@ void gfxInit(void)
 
     gfxSetGC(NULL);
 
-    /* diese RP m�ssen nur ein Bild maximaler Gr��e aufnehmen k�nnen */
-    /* in anderen Modulen wird vorausgesetzt, da� alle RastPorts gleich */
-    /* gro� sind und auch gleich gro� wie die StdBuffer sind */
+    /* diese RP müssen nur ein Bild maximaler Größe aufnehmen können */
+    /* in anderen Modulen wird vorausgesetzt, daß alle RastPorts gleich */
+    /* groß sind und auch gleich groß wie die StdBuffer sind */
     /* StdBuffer = 61 * 1024 = 62464, Mem: 62400 */
 
-    /* Ausnahme (nachtr�glich) : der RefreshRP ist nur 320 * 140 Pixel gro�!! */
+    /* Ausnahme (nachträglich) : der RefreshRP ist nur 320 * 140 Pixel groß!! */
 
-    gfxInitMemRastPort(&StdRP0InMem, SCREEN_WIDTH, SCREEN_HEIGHT); /* CMAP mu� auch Platz haben ! */
+    gfxInitMemRastPort(&StdRP0InMem, SCREEN_WIDTH, SCREEN_HEIGHT); /* CMAP muß auch Platz haben ! */
     gfxInitMemRastPort(&StdRP1InMem, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     gfxInitMemRastPort(&AnimRPInMem, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -199,7 +199,7 @@ void gfxInit(void)
 
     gfxInitMemRastPort(&LSFloorRPInMem, SCREEN_WIDTH, 32);
 
-    /* der RefreshRP mu� den ganzen Bildschirm aufnehmen k�nnen */
+    /* der RefreshRP muß den ganzen Bildschirm aufnehmen können */
     gfxInitMemRastPort(&RefreshRPInMem, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     gfxInitMemRastPort(&ScratchRP, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -758,9 +758,9 @@ void gfxPrepareColl(U16 collId)
 
 	/*
          * coll->prepared wird nicht mit dem ScratchRP initialisert, da
-	 * es sonst zu Inkonsistenzen kommen k�nnte. Collections im Scratch
-	 * werden als nicht vorbereitet betrachtet, da der ScratchRP st�ndig
-	 * durch andere Bilder �berschrieben wird
+	 * es sonst zu Inkonsistenzen kommen könnte. Collections im Scratch
+	 * werden als nicht vorbereitet betrachtet, da der ScratchRP ständig
+	 * durch andere Bilder überschrieben wird
          */
     }
 }
@@ -1423,8 +1423,8 @@ void gfxILBMToRAW(const U8 *src, U8 *dst, size_t size)
 		pic = pic1;	/* Anfang der aktuellen Zeile */
 		b = ((w + 15) & 0xfff0);
 		do {
-		    a = *sp;	/* Kommando (wiederholen oder �bernehmen */
-		    sp++;	/* n�chstes Zeichen */
+		    a = *sp;	/* Kommando (wiederholen oder übernehmen */
+		    sp++;	/* nächstes Zeichen */
 		    if (a > 128) {	/* Zeichen wiederholen */
 
 			a = 257 - a;
@@ -1436,7 +1436,7 @@ void gfxILBMToRAW(const U8 *src, U8 *dst, size_t size)
 			    pic += 8;
 			    b -= 8;
 			}
-		    } else {	/* Zeichen �bernehmen */
+		    } else {	/* Zeichen übernehmen */
 
 			for (x = 0; x <= a; x++) {
 			    y = *sp;
@@ -1689,7 +1689,7 @@ void ShowIntro(void)
             continue;
         }
 
-        fp = dskOpen(pathName, "r");
+        fp = dskOpen(pathName, "rb");
 
 	if (fp) {
             XMSOffset = 0;
@@ -1761,17 +1761,20 @@ void ShowIntro(void)
 
 
             {
-                /* Blend original 40 ms tick pacing with modern 60 Hz frame pacing */
-                const double legacyTickMs = FrameTimer.simulationTickMs;
-                const double modernFrameMs = FrameTimer.targetFrameMs;
-                const double blendedFrameMs = (legacyTickMs + modernFrameMs) * 0.5;
-                double targetMs = (double) rate[anims] * blendedFrameMs;
-                double elapsedMs = 0.0;
+            /* Bias animation pacing closer to modern 60 Hz timing without dropping the legacy flavour */
+            const double legacyTickMs = FrameTimer.simulationTickMs;
+            const double modernFrameMs = FrameTimer.targetFrameMs;
+            const double legacyWeight = 0.25;
+            const double modernWeight = 1.0 - legacyWeight;
+            const double blendedFrameMs =
+                (legacyTickMs * legacyWeight) + (modernFrameMs * modernWeight);
+            double targetMs = (double) rate[anims] * blendedFrameMs;
+            double elapsedMs = 0.0;
 
-                while (elapsedMs < targetMs) {
-                    gfxWaitTOF();
-                    elapsedMs += gfxGetFrameDeltaMs();
-                }
+            while (elapsedMs < targetMs) {
+                gfxWaitTOF();
+                elapsedMs += gfxGetFrameDeltaMs();
+            }
             }
 
 

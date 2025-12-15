@@ -29,7 +29,7 @@ static char SpeechClipKey[TXT_KEY_LENGTH];
 struct DynDlgNode {
     NODE Link;
 
-    ubyte KnownBefore;		/* wie gut Sie bekannt sein m�ssen */
+    ubyte KnownBefore;		/* wie gut Sie bekannt sein müssen */
     ubyte KnownAfter;		/* wie gut Sie danach bekannt sind ! */
 };
 
@@ -80,7 +80,7 @@ static LIST *ParseTalkText(LIST * origin, LIST * bubble, ubyte known)
     char snr[10], snr1[10];
     ubyte nr, nr1;
     U32 i;
-	    size_t keyLen;
+	size_t keyLen;
 
     keyWords = CreateList();
 
@@ -95,7 +95,7 @@ static LIST *ParseTalkText(LIST * origin, LIST * bubble, ubyte known)
 	    if (*mem != '[')
 		line[line_pos++] = *(mem++);
 	    else {
-		mem++;		/* Klammer �berspringen ! */
+		mem++;		/* Klammer überspringen ! */
 		key_pos = 0;
 
 		while ((*mem) != ']')
@@ -103,7 +103,7 @@ static LIST *ParseTalkText(LIST * origin, LIST * bubble, ubyte known)
 
 		key[key_pos++] = EOS;
 
-		mem++;		/* Klammer �berspringen ! */
+		mem++;		/* Klammer überspringen ! */
 
 			keyLen = strlen(key);
 
@@ -129,7 +129,7 @@ static LIST *ParseTalkText(LIST * origin, LIST * bubble, ubyte known)
 		nr = (ubyte) atol(snr);
 		nr1 = (ubyte) atol(snr1);
 
-		/* keyword einf�gen */
+		/* keyword einfügen */
 		for (i = 0; i < strlen(keyWord); i++)
 		    line[line_pos++] = keyWord[i];
 
@@ -166,7 +166,7 @@ void DynamicTalk(U32 Person1ID, U32 Person2ID, ubyte TalkMode)
 
     tcChgPersPopularity(p1, 5);	/* Bekanntheit steigt sehr gering */
 
-    /* je nach Bekanntheitsgrad wird Matt begr��t ! */
+    /* je nach Bekanntheitsgrad wird Matt begrüßt ! */
     dbGetObjectName(Person2ID, name);
     strcpy(key, name);
 
@@ -178,7 +178,7 @@ void DynamicTalk(U32 Person1ID, U32 Person2ID, ubyte TalkMode)
 	    known = 0;
 	    knowsSet(Person1ID, Person2ID);
 	} else
-	    known = 1;		/* MOD - kein "FRIENDLY mehr m�glich!" */
+	    known = 1;		/* MOD - kein "FRIENDLY mehr möglich!" */
     }
 
     strcat(key, Extension[known]);
@@ -209,7 +209,7 @@ void DynamicTalk(U32 Person1ID, U32 Person2ID, ubyte TalkMode)
 
 	quit = max = GetNrOfNodes(questions) - 1;
 
-	for (i = 0, stdcount = 0; i < 32; i++)	/* Std Fragen z�hlen */
+	for (i = 0, stdcount = 0; i < 32; i++)	/* Std Fragen zählen */
 	    if (p2->TalkBits & (1 << i))
 		stdcount++;
 

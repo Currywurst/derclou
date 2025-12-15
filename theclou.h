@@ -122,7 +122,7 @@ typedef S16 word;
 #define STORY_DAT_DEMO          "tcstory.dem"
 
 /*
- * Nummern der Textdateien in denen die Men�s stehen
+ * Nummern der Textdateien in denen die Menüs stehen
  *
  * siehe Texts.list im Verzeichnis Texts
  *
