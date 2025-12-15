@@ -252,7 +252,7 @@ void lsBlitOneObject(MemRastPort *rp, U16 offsetFact, U16 dx, U16 dy, U16 size)
     if (gLandscapeState->uch_ShowObjectMask)
         gfxLSPutMsk(rp, srcX, srcY, dx, dy, size, size);
     else
-        gfxLSPut(rp, srcX, srcY, dx, dy, size, size);
+        gfxLSPutMsk(rp, srcX, srcY, dx, dy, size, size);   /* keep masks for correct floor/geometry overlap */
 
 }
 
