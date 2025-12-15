@@ -9,6 +9,8 @@
 
 #include "inphdl/inphdl.h"
 
+#include <stdlib.h>
+
 #include "SDL.h"
 
 struct IHandler {
@@ -31,6 +33,13 @@ struct IHandler IHandler;
 
 
 void gfxWaitTOF(void);
+extern void tcDone(void);
+
+static void inpHandleQuitRequest(void)
+{
+	tcDone();
+	exit(0);
+}
 
 
 static void inpDoPseudoMultiTasking(void)
@@ -129,6 +138,9 @@ S32 inpWaitFor(S32 l_Mask)
 
 	while (SDL_PollEvent(&ev)) {
 	    switch (ev.type) {
+	    case SDL_QUIT:
+		inpHandleQuitRequest();
+		break;
 	    case SDL_KEYDOWN:
 		{
 		    switch (ev.key.keysym.sym) {
@@ -174,11 +186,6 @@ S32 inpWaitFor(S32 l_Mask)
 		    case SDLK_F8:
 		    case SDLK_F9:
 		    case SDLK_F10:
-		    case SDLK_F11:
-		    case SDLK_F12:
-		    case SDLK_F13:
-		    case SDLK_F14:
-		    case SDLK_F15:
 			if (IHandler.FunctionKeyStatus)
 			    action |= INP_KEYBOARD + INP_FUNCTION_KEY;
 			break;
