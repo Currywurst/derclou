@@ -128,6 +128,40 @@ void gfxLSPutMsk(MemRastPort *sp, U16 sx, U16 sy, U16 dx, U16 dy, U16 w, U16 h)
     MemBlit(sp, &srcR, &LSRPInMem, &dstR, GFX_ROP_MASK_BLIT);
 }
 
+void gfxLSOverlay(MemRastPort *sp, U16 sx, U16 sy, U16 dx, U16 dy, U16 w, U16 h)
+{
+    Rect srcR, dstR;
+
+    srcR.x = sx;
+    srcR.y = sy;
+    srcR.w = w;
+    srcR.h = h;
+
+    dstR.x = dx;
+    dstR.y = dy;
+    dstR.w = w;
+    dstR.h = h;
+
+    MemBlit(sp, &srcR, &LSRPInMem, &dstR, GFX_ROP_OVERLAY);
+}
+
+void gfxLSOverlayMask(MemRastPort *sp, U16 sx, U16 sy, U16 dx, U16 dy, U16 w, U16 h)
+{
+    Rect srcR, dstR;
+
+    srcR.x = sx;
+    srcR.y = sy;
+    srcR.w = w;
+    srcR.h = h;
+
+    dstR.x = dx;
+    dstR.y = dy;
+    dstR.w = w;
+    dstR.h = h;
+
+    MemBlit(sp, &srcR, &LSRPInMem, &dstR, GFX_ROP_OVERLAY_MSK);
+}
+
 void gfxLSPutClr(MemRastPort *sp, U16 sx, U16 sy, U16 dx, U16 dy, U16 w, U16 h)
 {
     Rect srcR, dstR;

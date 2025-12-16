@@ -44,6 +44,8 @@ void gfxLSInit(void);
 
 void gfxLSPut(MemRastPort *sp, U16 sx, U16 sy, U16 dx, U16 dy, U16 w, U16 h);
 void gfxLSPutMsk(MemRastPort *sp, U16 sx, U16 sy, U16 dx, U16 dy, U16 w, U16 h);
+void gfxLSOverlay(MemRastPort *sp, U16 sx, U16 sy, U16 dx, U16 dy, U16 w, U16 h);
+void gfxLSOverlayMask(MemRastPort *sp, U16 sx, U16 sy, U16 dx, U16 dy, U16 w, U16 h);
 void gfxLSPutClr(MemRastPort *sp, U16 sx, U16 sy, U16 dx, U16 dy, U16 w, U16 h);
 void gfxLSPutSet(MemRastPort *sp, U16 sx, U16 sy, U16 dx, U16 dy, U16 w, U16 h);
 

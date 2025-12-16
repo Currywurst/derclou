@@ -109,7 +109,7 @@ void lsRefreshStatue(LSObject lso)
     destX = lso->us_DestX + 7;
     destY = lso->us_DestY + 10;
 
-    gfxLSPutMsk(rp, srcX, srcY, destX, destY, size, size);
+    gfxLSOverlayMask(rp, srcX, srcY, destX, destY, size, size);
 
     gLandscapeState->uch_ShowObjectMask = 0x0;
 }
@@ -250,9 +250,9 @@ void lsBlitOneObject(MemRastPort *rp, U16 offsetFact, U16 dx, U16 dy, U16 size)
     srcX = (offsetFact % perRow) * size;
 
     if (gLandscapeState->uch_ShowObjectMask)
-        gfxLSPutMsk(rp, srcX, srcY, dx, dy, size, size);
+        gfxLSOverlayMask(rp, srcX, srcY, dx, dy, size, size);
     else
-        gfxLSPutMsk(rp, srcX, srcY, dx, dy, size, size);   /* keep masks for correct floor/geometry overlap */
+        gfxLSOverlay(rp, srcX, srcY, dx, dy, size, size);
 
 }
 

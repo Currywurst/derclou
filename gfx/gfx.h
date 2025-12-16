@@ -233,7 +233,9 @@ typedef enum {
     GFX_ROP_BLIT      = 0,
     GFX_ROP_MASK_BLIT = 1,
     GFX_ROP_CLR       = 2,
-    GFX_ROP_SET       = 3
+    GFX_ROP_SET       = 3,
+    GFX_ROP_OVERLAY   = 4,
+    GFX_ROP_OVERLAY_MSK = 5
 } ROpE;
 
 void gfxBlit(GC *gc, MemRastPort *src, U16 sx, U16 sy, U16 dx, U16 dy,

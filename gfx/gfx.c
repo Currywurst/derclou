@@ -2125,7 +2125,7 @@ void MemBlit(MemRastPort *src, Rect *src_rect,
         for (y=0; y<areaR.h; y++) {
             for (x=0; x<areaR.w; x++) {
                 if (sp[x] != 0) {
-                    dp[x] = sp[x];
+                    dp[x] = sp[x] | (dp[x] & 0x40);
                 }
             }
             dp += dw;
@@ -2147,6 +2147,28 @@ void MemBlit(MemRastPort *src, Rect *src_rect,
         for (y=0; y<areaR.h; y++) {
             for (x=0; x<areaR.w; x++) {
                 dp[x] |= sp[x];
+            }
+            dp += dw;
+            sp += sw;
+        }
+        break;
+
+    case GFX_ROP_OVERLAY:
+        for (y=0; y<areaR.h; y++) {
+            for (x=0; x<areaR.w; x++) {
+                if (sp[x] != 0)
+                    dp[x] = sp[x];
+            }
+            dp += dw;
+            sp += sw;
+        }
+        break;
+
+    case GFX_ROP_OVERLAY_MSK:
+        for (y=0; y<areaR.h; y++) {
+            for (x=0; x<areaR.w; x++) {
+                if (sp[x] != 0)
+                    dp[x] = sp[x] | (dp[x] & 0x40);
             }
             dp += dw;
             sp += sw;

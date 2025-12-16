@@ -635,6 +635,6 @@ void lsDoDoorRefresh(LSObject lso)
     width = lso->uch_Size;
     height = lso->uch_Size;
 
-    gfxLSPut(&LS_DOOR_REFRESH_MEM_RP, drn->us_XOffset, drn->us_YOffset,
-        lso->us_DestX, lso->us_DestY, width, height);
+	gfxLSOverlayMask(&LS_DOOR_REFRESH_MEM_RP, drn->us_XOffset, drn->us_YOffset,
+		lso->us_DestX, lso->us_DestY, width, height);
 }
