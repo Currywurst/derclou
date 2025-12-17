@@ -9,7 +9,7 @@
 #include <limits.h>
 #include <math.h>
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #include "base/base.h"
 
@@ -18,10 +18,13 @@
 #include "sound/fx.h"
 #include "sound/hsc.h"
 
+#define SND_STREAM_CHUNK_BYTES (SND_SAMPLES * (int)sizeof(S16))
+
 struct FXBase FXBase;
 
 static bool SfxChannelOn = false;
 static bool MusicChannelOn = true;
+static Uint8 MixChunk[SND_STREAM_CHUNK_BYTES];
 
 typedef struct SpeechChannel {
     S16 *samples;
@@ -37,87 +40,222 @@ static bool SpeechDirAvailable = false;
 static void LoadVOC(const char *fileName);
 static void SpeechFreeBufferUnlocked(void);
 static S16 SpeechNextSample(void);
+static void MixAudioChunk(Uint8 *stream, int len);
+static int SDLCALL sndAudioThread(void *userdata);
 
-
-static void sndCallBack(void *udata, Uint8 *stream, int len)
+void sndAudioLock(void)
 {
-    S16 *MixStream = (S16 *) stream;
-    const float sfxFactor = ((float)setup.SfxVolume) / SND_MAX_VOLUME,
-            musicFactor = ((float)setup.MusicVolume) / SND_MAX_VOLUME;
-    int sizeStream, i;
+    if (FXBase.audioMutex) {
+        SDL_LockMutex(FXBase.audioMutex);
+    }
+}
+
+void sndAudioUnlock(void)
+{
+    if (FXBase.audioMutex) {
+        SDL_UnlockMutex(FXBase.audioMutex);
+    }
+}
+
+static void MixAudioChunk(Uint8 *stream, int len)
+{
+    const float sfxFactor = ((float) setup.SfxVolume) / SND_MAX_VOLUME;
+    const float musicFactor = ((float) setup.MusicVolume) / SND_MAX_VOLUME;
+    const int alignedLen = len & ~(int) (sizeof(S16) - 1);
+    int frames, i;
+
+    if (alignedLen <= 0) {
+        return;
+    }
 
     if (MusicChannelOn) {
-	hscMusicPlayer(len);
+        hscMusicPlayer(alignedLen);
     }
 
-    SDL_memset(stream, 0, len);
+    SDL_memset(stream, 0, alignedLen);
 
-    sizeStream = len / sizeof(S16);
-    for (i = 0; i < sizeStream; i++) {
-	S16 Sfx, Music;
+    frames = alignedLen / (int) sizeof(S16);
+    for (i = 0; i < frames; i++) {
+        S16 sfxSample = 0;
+        S16 musicSample = 0;
 
-	Sfx = Music = 0;
-	if (SfxChannelOn) {
-	    sndRemoveBuffer(FXBase.pSfxBuffer, &Sfx, sizeof(Sfx));
-	}
-	if (MusicChannelOn) {
-	    sndRemoveBuffer(FXBase.pMusicBuffer, &Music, sizeof(Music));
-	}
+        if (SfxChannelOn) {
+            sndRemoveBuffer(FXBase.pSfxBuffer, &sfxSample, sizeof(sfxSample));
+        }
+        if (MusicChannelOn) {
+            sndRemoveBuffer(FXBase.pMusicBuffer, &musicSample,
+                            sizeof(musicSample));
+        }
 
-    float sample = sfxFactor * (float) Sfx + musicFactor * (float) Music;
-    sample += (float) SpeechNextSample();
+        float sample = sfxFactor * (float) sfxSample
+                + musicFactor * (float) musicSample;
+        sample += (float) SpeechNextSample();
 
-    if (sample > INT16_MAX) {
-        sample = INT16_MAX;
-    } else if (sample < INT16_MIN) {
-        sample = INT16_MIN;
+        if (sample > INT16_MAX) {
+            sample = INT16_MAX;
+        } else if (sample < INT16_MIN) {
+            sample = INT16_MIN;
+        }
+
+        ((S16 *) stream)[i] = (S16) sample;
+    }
+}
+
+static int SDLCALL sndAudioThread(void *userdata)
+{
+    (void) userdata;
+
+    while (FXBase.audioThreadRunning) {
+        const int target = SND_STREAM_CHUNK_BYTES * 4;
+        int available;
+        int deficit;
+
+        if (!FXBase.audioStream) {
+            SDL_Delay(10);
+            continue;
+        }
+
+        available = SDL_GetAudioStreamAvailable(FXBase.audioStream);
+        deficit = target - available;
+
+        while (FXBase.audioThreadRunning && deficit > 0) {
+            int chunk = SDL_min(deficit, SND_STREAM_CHUNK_BYTES);
+
+            chunk &= ~(int) (sizeof(S16) - 1);
+            if (chunk <= 0) {
+                break;
+            }
+
+            sndAudioLock();
+            MixAudioChunk(MixChunk, chunk);
+            sndAudioUnlock();
+
+            if (!SDL_PutAudioStreamData(FXBase.audioStream, MixChunk, chunk)) {
+                DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+                         "SDL_PutAudioStreamData: %s", SDL_GetError());
+                SDL_Delay(10);
+                break;
+            }
+
+            deficit -= chunk;
+        }
+
+        SDL_Delay(5);
     }
 
-    MixStream[i] = (S16) sample;
-    }
+    return 0;
 }
 
 void InitAudio(void)
 {
     SDL_AudioSpec spec;
 
-    if (SDL_InitSubSystem(SDL_INIT_AUDIO) == 0) {
-	FXBase.us_AudioOk = 1;
-    } else {
-	DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+    FXBase.us_AudioOk = 0;
+
+    if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
+        DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
                  "SDL_InitSubSystem: %s", SDL_GetError());
-	FXBase.us_AudioOk = 0;
-	return;
+        return;
     }
 
-    spec.freq       = SND_FREQUENCY;
-    spec.format     = AUDIO_S16;
-    spec.channels   = 1;
-    spec.samples    = SND_SAMPLES;
-    spec.callback   = sndCallBack;
-    spec.userdata   = NULL;
+    SDL_zero(spec);
+    spec.format = SDL_AUDIO_S16;
+    spec.channels = 1;
+    spec.freq = SND_FREQUENCY;
 
-    if (SDL_OpenAudio(&spec, NULL)) {
+    FXBase.audioStream = SDL_OpenAudioDeviceStream(
+            SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
+    if (!FXBase.audioStream) {
         DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
-                 "SDL_OpenAudio: %s", SDL_GetError());
-        FXBase.us_AudioOk = 0;
-	return;
+                 "SDL_OpenAudioDeviceStream: %s", SDL_GetError());
+        return;
     }
 
     FXBase.pSfxBuffer = sndCreateBuffer(SND_BUFFER_SIZE);
     FXBase.pMusicBuffer = sndCreateBuffer(SND_BUFFER_SIZE);
 
-    SDL_PauseAudio(0);
+    FXBase.audioMutex = SDL_CreateMutex();
+    if (!FXBase.audioMutex) {
+        DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+                 "SDL_CreateMutex failed: %s", SDL_GetError());
+        goto fail;
+    }
+
+    FXBase.audioThreadRunning = true;
+    FXBase.audioThread = SDL_CreateThread(sndAudioThread, "audio-mix", NULL);
+    if (!FXBase.audioThread) {
+        FXBase.audioThreadRunning = false;
+        DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+                 "SDL_CreateThread failed: %s", SDL_GetError());
+        goto fail;
+    }
+
+    if (!SDL_ResumeAudioStreamDevice(FXBase.audioStream)) {
+        DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+                 "SDL_ResumeAudioStreamDevice: %s", SDL_GetError());
+        goto fail;
+    }
+
+    FXBase.us_AudioOk = 1;
+    return;
+
+fail:
+    if (FXBase.audioThread) {
+        FXBase.audioThreadRunning = false;
+        SDL_WaitThread(FXBase.audioThread, NULL);
+        FXBase.audioThread = NULL;
+    }
+    if (FXBase.audioMutex) {
+        SDL_DestroyMutex(FXBase.audioMutex);
+        FXBase.audioMutex = NULL;
+    }
+    if (FXBase.audioStream) {
+        SDL_DestroyAudioStream(FXBase.audioStream);
+        FXBase.audioStream = NULL;
+    }
+    if (FXBase.pSfxBuffer) {
+        sndFreeBuffer(FXBase.pSfxBuffer);
+        FXBase.pSfxBuffer = NULL;
+    }
+    if (FXBase.pMusicBuffer) {
+        sndFreeBuffer(FXBase.pMusicBuffer);
+        FXBase.pMusicBuffer = NULL;
+    }
 }
 
 void RemoveAudio(void)
 {
     sndStopSpeechSample();
 
-    SDL_CloseAudio();
+    FXBase.audioThreadRunning = false;
+    if (FXBase.audioThread) {
+        SDL_WaitThread(FXBase.audioThread, NULL);
+        FXBase.audioThread = NULL;
+    }
 
-    if (SDL_WasInit(SDL_INIT_AUDIO) != 0) {
-        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+    if (FXBase.audioMutex) {
+        SDL_DestroyMutex(FXBase.audioMutex);
+        FXBase.audioMutex = NULL;
+    }
+
+    if (FXBase.audioStream) {
+        if (!SDL_PauseAudioStreamDevice(FXBase.audioStream)) {
+            DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
+                     "SDL_PauseAudioStreamDevice failed: %s",
+                     SDL_GetError());
+        }
+        SDL_FlushAudioStream(FXBase.audioStream);
+        SDL_DestroyAudioStream(FXBase.audioStream);
+        FXBase.audioStream = NULL;
+    }
+
+    if (FXBase.pSfxBuffer) {
+        sndFreeBuffer(FXBase.pSfxBuffer);
+        FXBase.pSfxBuffer = NULL;
+    }
+    if (FXBase.pMusicBuffer) {
+        sndFreeBuffer(FXBase.pMusicBuffer);
+        FXBase.pMusicBuffer = NULL;
     }
 
     FXBase.us_AudioOk = 0;
@@ -125,11 +263,11 @@ void RemoveAudio(void)
 
 static void sndSetFxChannel(bool enabled)
 {
-    SDL_LockAudio();
+    sndAudioLock();
 
     SfxChannelOn = enabled;
 
-    SDL_UnlockAudio();
+    sndAudioUnlock();
 }
 
 void sndInitFX(void)
@@ -156,11 +294,11 @@ void sndPrepareFX(const char *name)
 
 void sndPlayFX(void)
 {
-    SDL_LockAudio();
+    sndAudioLock();
 
     SfxChannelOn = true;
 
-    SDL_UnlockAudio();
+    sndAudioUnlock();
 }
 
 bool sndSpeechLibraryAvailable(void)
@@ -183,7 +321,8 @@ bool sndPlaySpeechSample(const char *clipName)
     SDL_AudioSpec wavSpec;
     Uint8 *wavBuffer = NULL;
     Uint32 wavLength = 0;
-    SDL_AudioCVT cvt;
+    Uint8 *converted = NULL;
+    int convertedLen = 0;
     size_t frames;
     char fileName[DSK_PATH_MAX];
     char path[DSK_PATH_MAX];
@@ -211,65 +350,53 @@ bool sndPlaySpeechSample(const char *clipName)
         return false;
     }
 
-    if (SDL_BuildAudioCVT(&cvt,
-                          wavSpec.format, wavSpec.channels, wavSpec.freq,
-                          AUDIO_S16, 1, SND_FREQUENCY) < 0) {
+    SDL_AudioSpec dstSpec;
+    dstSpec.format = SDL_AUDIO_S16;
+    dstSpec.channels = 1;
+    dstSpec.freq = SND_FREQUENCY;
+
+    if (!SDL_ConvertAudioSamples(&wavSpec, wavBuffer, (int) wavLength,
+                                 &dstSpec, &converted, &convertedLen)) {
         DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
-                 "SDL_BuildAudioCVT failed for %s: %s",
+                 "SDL_ConvertAudioSamples failed for %s: %s",
                  fileName, SDL_GetError());
-        SDL_FreeWAV(wavBuffer);
+        SDL_free(wavBuffer);
         return false;
     }
 
-    cvt.len = wavLength;
-    cvt.buf = SDL_malloc((size_t) cvt.len * (size_t) cvt.len_mult);
-    if (!cvt.buf) {
-        SDL_FreeWAV(wavBuffer);
-        ErrorMsg(No_Mem, ERROR_MODULE_SOUND, 0);
-        return false;
-    }
-    memcpy(cvt.buf, wavBuffer, wavLength);
-    SDL_FreeWAV(wavBuffer);
+    SDL_free(wavBuffer);
 
-    if (SDL_ConvertAudio(&cvt) < 0) {
-        DebugMsg(ERR_WARNING, ERROR_MODULE_SOUND,
-                 "SDL_ConvertAudio failed for %s: %s",
-                 fileName, SDL_GetError());
-        SDL_free(cvt.buf);
-        return false;
-    }
-
-    frames = cvt.len_cvt / sizeof(S16);
+    frames = (size_t) convertedLen / sizeof(S16);
     if (!frames) {
-        SDL_free(cvt.buf);
+        SDL_free(converted);
         return false;
     }
 
-    SDL_LockAudio();
+    sndAudioLock();
     SpeechFreeBufferUnlocked();
-    Speech.samples = (S16 *) cvt.buf;
+    Speech.samples = (S16 *) converted;
     Speech.frames = frames;
     Speech.cursor = 0;
     Speech.active = true;
-    SDL_UnlockAudio();
+    sndAudioUnlock();
 
     return true;
 }
 
 void sndStopSpeechSample(void)
 {
-    SDL_LockAudio();
+    sndAudioLock();
     SpeechFreeBufferUnlocked();
-    SDL_UnlockAudio();
+    sndAudioUnlock();
 }
 
 bool sndSpeechSamplePlaying(void)
 {
     bool playing;
 
-    SDL_LockAudio();
+    sndAudioLock();
     playing = Speech.active;
-    SDL_UnlockAudio();
+    sndAudioUnlock();
 
     return playing;
 }

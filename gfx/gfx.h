@@ -22,7 +22,7 @@
 #define MODULE_GFX
 
 #include "theclou.h"
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #include "list/list.h"
 
@@ -250,7 +250,9 @@ void gfxScreenFreeze(void);
 void gfxScreenThaw(GC *gc, U16 x, U16 y, U16 w, U16 h);
 void gfxScreenUnFreeze(void);
 
+void gfxWindowToLogical(int windowX, int windowY, int *logicalX, int *logicalY);
 void gfxGetMouseXY(GC *gc, U16 *pMouseX, U16 *pMouseY);
+void gfxHandleWindowEvent(const SDL_Event *ev);
 
 void ShowIntro(void);
 

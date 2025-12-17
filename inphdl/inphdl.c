@@ -11,7 +11,7 @@
 
 #include <stdlib.h>
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 struct IHandler {
     S32 ul_XSensitivity;
@@ -137,13 +137,14 @@ S32 inpWaitFor(S32 l_Mask)
 		}
 
 	while (SDL_PollEvent(&ev)) {
+	    gfxHandleWindowEvent(&ev);
 	    switch (ev.type) {
-	    case SDL_QUIT:
+	    case SDL_EVENT_QUIT:
 		inpHandleQuitRequest();
 		break;
-	    case SDL_KEYDOWN:
-		{
-		    switch (ev.key.keysym.sym) {
+	    case SDL_EVENT_KEY_DOWN:
+        {
+	    switch (ev.key.key) {
 		    case SDLK_LEFT:
 			if ((l_Mask & INP_LEFT))
 			    action |= INP_KEYBOARD + INP_LEFT;
@@ -196,7 +197,7 @@ S32 inpWaitFor(S32 l_Mask)
 		}
 		break;
 
-	    case SDL_MOUSEMOTION:
+	    case SDL_EVENT_MOUSE_MOTION:
 		if (IHandler.MouseExists && IHandler.MouseStatus) {
 		    if ((l_Mask & INP_LEFT) && (ev.motion.xrel < 0))
 			action |= INP_MOUSE + INP_LEFT;
@@ -209,7 +210,7 @@ S32 inpWaitFor(S32 l_Mask)
 		}
 		break;
 
-	    case SDL_MOUSEBUTTONDOWN:
+	    case SDL_EVENT_MOUSE_BUTTON_DOWN:
 		if (IHandler.MouseExists && IHandler.MouseStatus) {
 		    if (ev.button.button == SDL_BUTTON_LEFT) {
 			action |= INP_MOUSE + INP_LBUTTONP;
@@ -308,9 +309,10 @@ void inpSetKeyRepeat(unsigned char rate)
 /*    SDL_EnableKeyRepeat(delay, interval);*/
 
     /* flush event queue */
-    while (SDL_PollEvent(&ev)) {
-        /* do nothing. */
-    }
+	while (SDL_PollEvent(&ev)) {
+		gfxHandleWindowEvent(&ev);
+		/* do nothing. */
+	}
 }
 
 void inpClearKbBuffer(void)

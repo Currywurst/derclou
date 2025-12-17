@@ -18,7 +18,7 @@
   distribution.
  ****************************************************************************/
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #define GFX_SEG_ADDR						(0xA0000000L)
 #define GFX_PAGE_SIZE					(64000L)	/* 320*200 = 64000 Bytes groß */

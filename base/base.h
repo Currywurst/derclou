@@ -98,6 +98,7 @@ struct Setup {
     bool CDAudioFromCD;
     bool CDAudioFromWav;
     unsigned Scale;
+    bool ScaleOverride;
 };
 
 extern struct Setup setup;

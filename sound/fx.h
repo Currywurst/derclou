@@ -12,6 +12,8 @@
 
 #include "sound/buffer.h"
 
+struct SDL_AudioStream;
+
 #define	SND_FREQUENCY				22050
 #define SND_MAX_VOLUME                          255
 
@@ -24,6 +26,11 @@ struct FXBase {
 
     SND_BUFFER *pSfxBuffer;
     SND_BUFFER *pMusicBuffer;
+
+  struct SDL_AudioStream *audioStream;
+  struct SDL_Thread *audioThread;
+  SDL_Mutex *audioMutex;
+  bool audioThreadRunning;
 };
 
 extern struct FXBase FXBase;
@@ -35,6 +42,8 @@ extern void sndPlayFX(void);
 
 extern void InitAudio(void);
 extern void RemoveAudio(void);
+void sndAudioLock(void);
+void sndAudioUnlock(void);
 
 #endif
 

@@ -9,7 +9,7 @@
 #ifndef TC__BOB_H
 #define TC__BOB_H
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 struct RastPort;
 

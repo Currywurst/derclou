@@ -20,7 +20,9 @@
  ****************************************************************************/
 
 #include <assert.h>
-#include "SDL.h"
+#include <stdlib.h>
+#include <string.h>
+#include <SDL3/SDL.h>
 
 #include "base/base.h"
 
@@ -58,6 +60,21 @@ SDL_Texture *sdlTexture;
 
 ubyte DecrBuffer[GFX_DECR_BUFFER_SIZE] = {0};
 
+#define GFX_WINDOW_PREF_FILE "window.cfg"
+
+typedef struct WindowPrefs {
+    unsigned scale;
+    int width;
+    int height;
+    bool loaded;
+} WindowPrefs;
+
+static WindowPrefs windowPrefs = {0, 0, 0, false};
+static char *windowPrefsPath = NULL;
+static bool windowResizeLocked = false;
+static int currentWindowWidth = SCREEN_WIDTH;
+static int currentWindowHeight = SCREEN_HEIGHT;
+
 typedef struct FrameClock {
     bool initialized;
     double targetFrameMs;
@@ -77,6 +94,20 @@ static FrameClock FrameTimer = {
     0,
     0
 };
+
+static SDL_Palette *gfxGetScreenPalette(void)
+{
+    SDL_Palette *palette;
+
+    if (!Screen)
+        return NULL;
+
+    palette = SDL_GetSurfacePalette(Screen);
+    if (!palette)
+        palette = SDL_CreateSurfacePalette(Screen);
+
+    return palette;
+}
 
 static void gfxEnsurePerfFreq(void)
 {
@@ -140,6 +171,182 @@ double gfxGetSimulationTickMs(void)
     return FrameTimer.simulationTickMs;
 }
 
+static unsigned gfxClampScale(unsigned scale)
+{
+    if (scale == 0)
+        scale = 1;
+    return scale;
+}
+
+static void gfxInitWindowPrefsPath(void)
+{
+    char *prefDir;
+    size_t len;
+
+    if (windowPrefsPath)
+        return;
+
+    prefDir = SDL_GetPrefPath("DerClou", "DerClou");
+    if (!prefDir)
+        return;
+
+    len = strlen(prefDir) + strlen(GFX_WINDOW_PREF_FILE) + 1;
+    windowPrefsPath = (char *)malloc(len);
+    if (windowPrefsPath) {
+        strcpy(windowPrefsPath, prefDir);
+        strcat(windowPrefsPath, GFX_WINDOW_PREF_FILE);
+    }
+
+    SDL_free(prefDir);
+}
+
+static void gfxLoadWindowPrefs(void)
+{
+    FILE *fp;
+    char line[128];
+    unsigned value;
+
+    if (!windowPrefsPath)
+        return;
+
+    fp = fopen(windowPrefsPath, "r");
+    if (!fp)
+        return;
+
+    while (fgets(line, sizeof(line), fp)) {
+        if (sscanf(line, "scale=%u", &value) == 1) {
+            if (value >= 1)
+                windowPrefs.scale = value;
+        } else if (sscanf(line, "width=%u", &value) == 1) {
+            windowPrefs.width = (int)value;
+        } else if (sscanf(line, "height=%u", &value) == 1) {
+            windowPrefs.height = (int)value;
+        }
+    }
+
+    fclose(fp);
+
+    if (windowPrefs.scale >= 1)
+        windowPrefs.loaded = true;
+}
+
+static void gfxSaveWindowPrefs(void)
+{
+    FILE *fp;
+
+    if (!windowPrefsPath || !windowPrefs.loaded)
+        return;
+
+    fp = fopen(windowPrefsPath, "w");
+    if (!fp)
+        return;
+
+    fprintf(fp, "scale=%u\n", setup.Scale);
+    fprintf(fp, "width=%d\n", windowPrefs.width);
+    fprintf(fp, "height=%d\n", windowPrefs.height);
+
+    fclose(fp);
+}
+
+static void gfxUpdateWindowMetrics(unsigned scale)
+{
+    unsigned clampedScale = gfxClampScale(scale);
+    windowPrefs.scale = clampedScale;
+    windowPrefs.width = (int)(SCREEN_WIDTH * clampedScale);
+    windowPrefs.height = (int)(SCREEN_HEIGHT * clampedScale);
+    currentWindowWidth = windowPrefs.width;
+    currentWindowHeight = windowPrefs.height;
+    windowPrefs.loaded = true;
+}
+
+static void gfxApplyWindowScale(unsigned scale, bool updateWindow, bool persist)
+{
+    scale = gfxClampScale(scale);
+
+    if (setup.FullScreen)
+        persist = false;
+
+    setup.Scale = scale;
+    gfxUpdateWindowMetrics(scale);
+
+    if (updateWindow && sdlWindow && !setup.FullScreen) {
+        windowResizeLocked = true;
+        SDL_SetWindowSize(sdlWindow, windowPrefs.width, windowPrefs.height);
+        windowResizeLocked = false;
+    }
+
+    if (persist)
+        gfxSaveWindowPrefs();
+}
+
+static unsigned gfxChooseScaleFromResize(int width, int height, bool growing)
+{
+    unsigned metric;
+
+    if (growing) {
+        unsigned widthScaleCeil = (unsigned)((width + SCREEN_WIDTH - 1) / SCREEN_WIDTH);
+        unsigned heightScaleCeil = (unsigned)((height + SCREEN_HEIGHT - 1) / SCREEN_HEIGHT);
+        metric = (widthScaleCeil > heightScaleCeil) ? widthScaleCeil : heightScaleCeil;
+    } else {
+        unsigned widthScaleFloor = (unsigned)(width / SCREEN_WIDTH);
+        unsigned heightScaleFloor = (unsigned)(height / SCREEN_HEIGHT);
+        metric = (widthScaleFloor < heightScaleFloor) ? widthScaleFloor : heightScaleFloor;
+    }
+
+    if (metric < 1)
+        metric = 1;
+
+    return metric;
+}
+
+static void gfxHandleWindowResizeEvent(int width, int height)
+{
+    unsigned targetScale;
+    bool growing;
+    long long prevArea;
+    long long newArea;
+
+    if (width <= 0 || height <= 0)
+        return;
+
+    prevArea = (long long)currentWindowWidth * (long long)currentWindowHeight;
+    newArea = (long long)width * (long long)height;
+    growing = (newArea >= prevArea);
+    targetScale = gfxChooseScaleFromResize(width, height, growing);
+
+    if (targetScale == setup.Scale &&
+        width == currentWindowWidth &&
+        height == currentWindowHeight) {
+        return;
+    }
+
+    gfxApplyWindowScale(targetScale, true, true);
+}
+
+void gfxHandleWindowEvent(const SDL_Event *ev)
+{
+    SDL_WindowID windowId;
+
+    if (!ev || !sdlWindow)
+        return;
+
+    windowId = SDL_GetWindowID(sdlWindow);
+
+    switch (ev->type) {
+    case SDL_EVENT_WINDOW_RESIZED:
+    case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+        if (ev->window.windowID != windowId)
+            break;
+        if (setup.FullScreen || windowResizeLocked)
+            break;
+        gfxHandleWindowResizeEvent(ev->window.data1, ev->window.data2);
+        break;
+
+    default:
+        break;
+    }
+}
+
 /********************************************************************
  * inits & dons
  */
@@ -149,37 +356,116 @@ void gfxInit(void)
     Uint32 flags;
     int sw, sh;
 
-    SDL_InitSubSystem(SDL_INIT_VIDEO);
+    gfxInitWindowPrefsPath();
+
+    if (!setup.ScaleOverride) {
+        gfxLoadWindowPrefs();
+        if (windowPrefs.loaded && windowPrefs.scale >= 1)
+            setup.Scale = windowPrefs.scale;
+    }
+
+    gfxApplyWindowScale(setup.Scale, false, false);
+
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
+        DebugMsg(ERR_ERROR, ERROR_MODULE_GFX,
+                 "SDL video initialization failed: %s", SDL_GetError());
+        return;
+    }
     gfxInitFrameClock();
 
     flags = SDL_WINDOW_OPENGL;
 
     if (setup.FullScreen) {
-        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-
-	sw = sh = 0;
+        flags |= SDL_WINDOW_FULLSCREEN;
+        sw = SCREEN_WIDTH;
+        sh = SCREEN_HEIGHT;
     } else {
-	sw = SCREEN_WIDTH*setup.Scale;
-	sh = SCREEN_HEIGHT*setup.Scale;
+        flags |= SDL_WINDOW_RESIZABLE;
+        sw = SCREEN_WIDTH * setup.Scale;
+        sh = SCREEN_HEIGHT * setup.Scale;
     }
 
-    sdlWindow = SDL_CreateWindow("Der Clou!",
-	    SDL_WINDOWPOS_UNDEFINED,
-	    SDL_WINDOWPOS_UNDEFINED,
-	    sw, sh,
-	    flags);
-    sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-    SDL_RenderSetLogicalSize(sdlRenderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+    sdlWindow = SDL_CreateWindow("Der Clou!", sw, sh, flags);
+    if (!sdlWindow) {
+        DebugMsg(ERR_ERROR, ERROR_MODULE_GFX,
+                 "SDL_CreateWindow failed: %s", SDL_GetError());
+        return;
+    }
 
-    windowSurface = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT,
-	    24, 0, 0, 0, 0);
+    sdlRenderer = SDL_CreateRenderer(sdlWindow, NULL);
+    if (!sdlRenderer) {
+        DebugMsg(ERR_ERROR, ERROR_MODULE_GFX,
+                 "SDL_CreateRenderer failed: %s", SDL_GetError());
+        return;
+    }
+
+    SDL_ShowWindow(sdlWindow);
+    SDL_RaiseWindow(sdlWindow);
+    SDL_SetWindowAlwaysOnTop(sdlWindow, true);
+    SDL_SetWindowAlwaysOnTop(sdlWindow, false);
+
+    SDL_SetRenderLogicalPresentation(sdlRenderer,
+                                     SCREEN_WIDTH, SCREEN_HEIGHT,
+                                     SDL_LOGICAL_PRESENTATION_DISABLED);
+
+    if (setup.FullScreen) {
+        if (!SDL_SetWindowFullscreenMode(sdlWindow, NULL)) {
+            DebugMsg(ERR_WARNING, ERROR_MODULE_GFX,
+                     "SDL_SetWindowFullscreenMode failed: %s",
+                     SDL_GetError());
+        }
+    } else {
+        SDL_SetWindowMinimumSize(sdlWindow, SCREEN_WIDTH, SCREEN_HEIGHT);
+    }
+
+    SDL_GetWindowSize(sdlWindow, &currentWindowWidth, &currentWindowHeight);
+
+    if (!setup.FullScreen) {
+        windowPrefs.width = currentWindowWidth;
+        windowPrefs.height = currentWindowHeight;
+        windowPrefs.loaded = true;
+    }
+
+    windowSurface = SDL_CreateSurface(SCREEN_WIDTH, SCREEN_HEIGHT,
+                                      SDL_PIXELFORMAT_XRGB8888);
+    if (!windowSurface) {
+        DebugMsg(ERR_ERROR, ERROR_MODULE_GFX,
+                 "SDL_CreateSurface window failed: %s", SDL_GetError());
+        return;
+    }
+
     sdlTexture = SDL_CreateTexture(sdlRenderer,
-	    SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING,
-	    SCREEN_WIDTH, SCREEN_HEIGHT);
+                                   SDL_PIXELFORMAT_XRGB8888,
+                                   SDL_TEXTUREACCESS_STREAMING,
+                                   SCREEN_WIDTH, SCREEN_HEIGHT);
+    if (!sdlTexture) {
+        DebugMsg(ERR_ERROR, ERROR_MODULE_GFX,
+                 "SDL_CreateTexture failed: %s", SDL_GetError());
+        return;
+    }
+    {
+#ifdef SDL_SCALEMODE_PIXELART
+        const SDL_ScaleMode scaleMode = SDL_SCALEMODE_PIXELART;
+#else
+        const SDL_ScaleMode scaleMode = SDL_SCALEMODE_NEAREST;
+#endif
+        if (!SDL_SetTextureScaleMode(sdlTexture, scaleMode)) {
+        DebugMsg(ERR_WARNING, ERROR_MODULE_GFX,
+                     "SDL_SetTextureScaleMode failed: %s", SDL_GetError());
+        }
+    }
 
-    Screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT,
-	    8, 0, 0, 0, 0);
+    Screen = SDL_CreateSurface(SCREEN_WIDTH, SCREEN_HEIGHT,
+                               SDL_PIXELFORMAT_INDEX8);
+    if (!Screen) {
+        DebugMsg(ERR_ERROR, ERROR_MODULE_GFX,
+                 "SDL_CreateSurface screen failed: %s", SDL_GetError());
+        return;
+    }
+    if (!gfxGetScreenPalette()) {
+        DebugMsg(ERR_WARNING, ERROR_MODULE_GFX,
+                 "Unable to allocate screen palette: %s", SDL_GetError());
+    }
 
     gfxSetGC(NULL);
 
@@ -239,6 +525,8 @@ void gfxInit(void)
 
 void gfxDone(void)
 {
+    gfxSaveWindowPrefs();
+
     if (PictureList) {
 	RemoveList(PictureList);
 	PictureList = NULL;
@@ -269,8 +557,34 @@ void gfxDone(void)
 
     gfxDoneMemRastPort(&LSRPInMem);
 
+    if (Screen) {
+        SDL_DestroySurface(Screen);
+        Screen = NULL;
+    }
+    if (windowSurface) {
+        SDL_DestroySurface(windowSurface);
+        windowSurface = NULL;
+    }
+    if (sdlTexture) {
+        SDL_DestroyTexture(sdlTexture);
+        sdlTexture = NULL;
+    }
+    if (sdlRenderer) {
+        SDL_DestroyRenderer(sdlRenderer);
+        sdlRenderer = NULL;
+    }
+    if (sdlWindow) {
+        SDL_DestroyWindow(sdlWindow);
+        sdlWindow = NULL;
+    }
+
     if (SDL_WasInit(SDL_INIT_VIDEO) != 0) {
         SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    }
+
+    if (windowPrefsPath) {
+        free(windowPrefsPath);
+        windowPrefsPath = NULL;
     }
 }
 
@@ -517,7 +831,7 @@ static Font *gfxOpenFont(char *fileName, U16 w, U16 h,
     lbm = dskLoad(path);
 
 
-    bmp = SDL_CreateRGBSurface(0, sw, sh, 8, 0, 0, 0, 0);
+    bmp = SDL_CreateSurface(sw, sh, SDL_PIXELFORMAT_INDEX8);
     size = sw * sh;
 
     if (SDL_MUSTLOCK(bmp))
@@ -530,7 +844,7 @@ static Font *gfxOpenFont(char *fileName, U16 w, U16 h,
 
     free(lbm);
 
-    SDL_SetColorKey(bmp, SDL_TRUE, 0);
+    SDL_SetSurfaceColorKey(bmp, true, 0);
     font->bmp = bmp;
 
     return font;
@@ -539,7 +853,7 @@ static Font *gfxOpenFont(char *fileName, U16 w, U16 h,
 void gfxCloseFont(Font *font)
 {
     if (font) {
-        SDL_FreeSurface(font->bmp);
+        SDL_DestroySurface(font->bmp);
 
 	TCFreeMem(font, sizeof(*font));
     }
@@ -668,7 +982,7 @@ void gfxRectFill(GC *gc, U16 sx, U16 sy, U16 ex, U16 ey)
     dst.w = ex - sx + 1;
     dst.h = ey - sy + 1;
 
-    SDL_FillRect(Screen, &dst, gc->outline);
+    SDL_FillSurfaceRect(Screen, &dst, gc->outline);
 
     dst2 = dst;
     dst2.x++;
@@ -676,7 +990,7 @@ void gfxRectFill(GC *gc, U16 sx, U16 sy, U16 ex, U16 ey)
     dst2.w -= 2;
     dst2.h -= 2;
 
-    SDL_FillRect(Screen, &dst2, gc->foreground);
+    SDL_FillSurfaceRect(Screen, &dst2, gc->foreground);
 
     gfxRefreshArea(dst.x, dst.y, dst.w, dst.h);
 }
@@ -907,7 +1221,7 @@ void gfxPrintExact(GC *gc, const char *txt, U16 x, U16 y)
     area.y += y;
 
     if (gc->mode == GFX_JAM_2)
-	SDL_FillRect(Screen, &area, gc->background);
+	SDL_FillSurfaceRect(Screen, &area, gc->background);
 
     srcR.w = w;
     srcR.h = h;
@@ -1121,7 +1435,7 @@ void gfxClearArea(GC *gc)
         area.w = SCREEN_WIDTH;
         area.h = SCREEN_HEIGHT;
     }
-    SDL_FillRect(Screen, &area, 0);
+    SDL_FillSurfaceRect(Screen, &area, 0);
 
     gfxRefreshArea(area.x, area.y, area.w, area.h);
 }
@@ -1134,7 +1448,12 @@ void gfxSetRGB(GC *gc, U8 color, U8 r, U8 g, U8 b)
     colors[0].g = g;
     colors[0].b = b;
 
-    SDL_SetPaletteColors(Screen->format->palette, colors, color, 1);
+    SDL_Palette *pal = gfxGetScreenPalette();
+
+    if (!pal)
+        return;
+
+    SDL_SetPaletteColors(pal, colors, color, 1);
 
     gfxRealRefreshArea(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
@@ -1147,9 +1466,9 @@ void gfxSetColorRange(ubyte uch_ColorStart, ubyte uch_End)
 
 void gfxGetPaletteFromReg(U8 *palette)
 {
-    SDL_Palette *pal;
+    SDL_Palette *pal = gfxGetScreenPalette();
 
-    if ((pal = Screen->format->palette)) {
+    if (pal) {
 	SDL_Color *colors;
 	int ncolors, i;
 
@@ -1173,6 +1492,10 @@ void gfxChangeColors(GC *gc, U32 delay, U32 mode, U8 *palette)
     U8 cols[GFX_PALETTE_SIZE];
     Rect area;
     S32 time, fakt, s;
+    SDL_Palette *pal = gfxGetScreenPalette();
+
+    if (!pal)
+        return;
 
     if (gc) {
 	st = gc->colorStart;
@@ -1209,7 +1532,7 @@ void gfxChangeColors(GC *gc, U32 delay, U32 mode, U8 *palette)
                 colors[t].g = 16 + (((S32)cols[t*3+1] - 16) * (fakt * s)) / 128;
                 colors[t].b = 12 + (((S32)cols[t*3+2] - 12) * (fakt * s)) / 128;
             }
-            SDL_SetPaletteColors(Screen->format->palette, &colors[st], st, en - st + 1);
+            SDL_SetPaletteColors(pal, &colors[st], st, en - st + 1);
         }
 
 	for (t=st; t<=en; t++) {
@@ -1217,7 +1540,7 @@ void gfxChangeColors(GC *gc, U32 delay, U32 mode, U8 *palette)
 	    colors[t].g = 0;
 	    colors[t].b = 0;
         }
-	SDL_SetPaletteColors(Screen->format->palette, &colors[st], st, en - st + 1);
+    SDL_SetPaletteColors(pal, &colors[st], st, en - st + 1);
 	break;
 
     case GFX_BLEND_UP:
@@ -1232,7 +1555,7 @@ void gfxChangeColors(GC *gc, U32 delay, U32 mode, U8 *palette)
 	    colors[t].g = 0;
 	    colors[t].b = 0;
         }
-	SDL_SetPaletteColors(Screen->format->palette, &colors[st], st, en - st + 1);
+	SDL_SetPaletteColors(pal, &colors[st], st, en - st + 1);
 
         for (s=0; s<=time; s++) {
             gfxRealRefreshArea(area.x, area.y, area.w, area.h);
@@ -1243,7 +1566,7 @@ void gfxChangeColors(GC *gc, U32 delay, U32 mode, U8 *palette)
                 colors[t].g = 16 + (((S32)cols[t*3+1] - 16) * (fakt * s)) / 128;
                 colors[t].b = 12 + (((S32)cols[t*3+2] - 12) * (fakt * s)) / 128;
             }
-            SDL_SetPaletteColors(Screen->format->palette, &colors[st], st, en - st + 1);
+            SDL_SetPaletteColors(pal, &colors[st], st, en - st + 1);
         }
 
         gfxRealRefreshArea(area.x, area.y, area.w, area.h);
@@ -1254,7 +1577,7 @@ void gfxChangeColors(GC *gc, U32 delay, U32 mode, U8 *palette)
 	    colors[t].g = palette[t*3+1];
 	    colors[t].b = palette[t*3+2];
         }
-	SDL_SetPaletteColors(Screen->format->palette, &colors[st], st, en - st + 1);
+    SDL_SetPaletteColors(pal, &colors[st], st, en - st + 1);
 	break;
     }
 
@@ -1729,12 +2052,12 @@ void ShowIntro(void)
                 SDL_Event ev;
 
                 while (SDL_PollEvent(&ev)) {
+	            gfxHandleWindowEvent(&ev);
                     switch (ev.type) {
-                    case SDL_KEYDOWN:
-                    case SDL_MOUSEBUTTONDOWN:
-                    case SDL_JOYBUTTONDOWN:
-                    
-                    case SDL_QUIT:
+                    case SDL_EVENT_KEY_DOWN:
+                    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                    case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
+                    case SDL_EVENT_QUIT:
                         endi = true;
                         goto endit;
 
@@ -2012,15 +2335,42 @@ void gfxRealRefreshArea(U16 x, U16 y, U16 w, U16 h)
 
     SDL_BlitSurface(Screen, NULL, windowSurface, NULL);
 
-    SDL_LockTexture(sdlTexture, NULL, &pixels, &pitch);
-    SDL_ConvertPixels(windowSurface->w, windowSurface->h,
-	    windowSurface->format->format,
-	    windowSurface->pixels, windowSurface->pitch,
-	    SDL_PIXELFORMAT_RGB888,
-	    pixels, pitch);
-    SDL_UnlockTexture(sdlTexture);
+    if (SDL_LockTexture(sdlTexture, NULL, &pixels, &pitch)) {
+        SDL_ConvertPixels(windowSurface->w, windowSurface->h,
+                windowSurface->format,
+                windowSurface->pixels, windowSurface->pitch,
+                SDL_PIXELFORMAT_XRGB8888,
+                pixels, pitch);
+        SDL_UnlockTexture(sdlTexture);
+    } else {
+        DebugMsg(ERR_WARNING, ERROR_MODULE_GFX,
+                 "SDL_LockTexture failed: %s", SDL_GetError());
+    }
 
-    SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
+    if (setup.FullScreen) {
+        int winW = 0;
+        int winH = 0;
+        SDL_GetWindowSize(sdlWindow, &winW, &winH);
+        SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+        SDL_RenderClear(sdlRenderer);
+
+        const float scaleX = (float) winW / (float) SCREEN_WIDTH;
+        const float scaleY = (float) winH / (float) SCREEN_HEIGHT;
+        const float scale = SDL_min(scaleX, scaleY);
+        const float drawW = SCREEN_WIDTH * scale;
+        const float drawH = SCREEN_HEIGHT * scale;
+        SDL_FRect dst = {
+            .x = (winW - drawW) * 0.5f,
+            .y = (winH - drawH) * 0.5f,
+            .w = drawW,
+            .h = drawH
+        };
+
+        SDL_RenderTexture(sdlRenderer, sdlTexture, NULL, &dst);
+    } else {
+        SDL_RenderTexture(sdlRenderer, sdlTexture, NULL, NULL);
+    }
+
     SDL_RenderPresent(sdlRenderer);
 }
 
@@ -2177,16 +2527,47 @@ void MemBlit(MemRastPort *src, Rect *src_rect,
     }
 }
 
+void gfxWindowToLogical(int windowX, int windowY, int *logicalX, int *logicalY)
+{
+    float logicalXf = (float) windowX;
+    float logicalYf = (float) windowY;
+    bool converted = false;
+
+    if (sdlRenderer) {
+        converted = SDL_RenderCoordinatesFromWindow(sdlRenderer,
+                                                    (float) windowX,
+                                                    (float) windowY,
+                                                    &logicalXf,
+                                                    &logicalYf);
+    }
+
+    if (!converted) {
+        unsigned scale = setup.Scale ? setup.Scale : 1;
+        logicalXf = (float) windowX / (float) scale;
+        logicalYf = (float) windowY / (float) scale;
+    }
+
+    if (logicalX)
+        *logicalX = (int) logicalXf;
+    if (logicalY)
+        *logicalY = (int) logicalYf;
+}
+
 void gfxGetMouseXY(GC *gc, U16 *pMouseX, U16 *pMouseY)
 {
+    float MouseXf = 0.0f, MouseYf = 0.0f;
     int MouseX = 0, MouseY = 0;
 
     SDL_PumpEvents();
 
-    SDL_GetMouseState(&MouseX, &MouseY);
+    SDL_GetMouseState(&MouseXf, &MouseYf);
+    MouseX = (int) SDL_roundf(MouseXf);
+    MouseY = (int) SDL_roundf(MouseYf);
+
+    if (pMouseX || pMouseY)
+        gfxWindowToLogical(MouseX, MouseY, &MouseX, &MouseY);
 
     if (pMouseX) {
-	MouseX /= setup.Scale;
 	if (MouseX < gc->clip.x)
 	    MouseX = 0;
 	else
@@ -2195,7 +2576,6 @@ void gfxGetMouseXY(GC *gc, U16 *pMouseX, U16 *pMouseY)
     }
 
     if (pMouseY) {
-	MouseY /= setup.Scale;
 	if (MouseY < gc->clip.y)
 	    MouseY = 0;
 	else

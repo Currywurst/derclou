@@ -23,7 +23,7 @@
 extern unsigned _stklen = 16 * 1024;
 #endif
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 void *StdBuffer0 = NULL;
 void *StdBuffer1 = NULL;
@@ -649,6 +649,7 @@ static void parseOptions(int argc, char *argv[])
     setup.CDAudioFromCD = false;
     setup.CDAudioFromWav = false;
     setup.Scale         = 1;
+    setup.ScaleOverride = false;
 
     for (i = 1; i < argc; i++) {
         s = argv[i];
@@ -657,6 +658,7 @@ static void parseOptions(int argc, char *argv[])
             switch (s[1]) {
             case 'g':
                 setup.Scale = max(atoi(s+2), 1);
+	setup.ScaleOverride = true;
 		break;
 
             case 'd':

@@ -19,7 +19,7 @@ foreach(flag_var IN ITEMS
     endif()
 endforeach()
 
-find_package(SDL2 REQUIRED)
+find_package(SDL3 REQUIRED CONFIG)
 
 set(SRC_FILES
     anim/sysanim.c
@@ -102,5 +102,5 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 # Link SDL2 and libm just like the original build.
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    SDL2::SDL2
+    SDL3::SDL3
 )

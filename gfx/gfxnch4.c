@@ -7,7 +7,7 @@
   distribution.
  ****************************************************************************/
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #include "landscap/landscap.h"
 

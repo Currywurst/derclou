@@ -5,7 +5,7 @@
   publiclicensecontract.doc files which should be contained with this
   distribution.
  ****************************************************************************/
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #include "disk/disk.h"
 
@@ -28,11 +28,9 @@ void sndInit(void)
 
 void sndDone(void)
 {
-    SDL_LockAudio();
-
+    sndAudioLock();
     hscDone();
-
-    SDL_UnlockAudio();
+    sndAudioUnlock();
 }
 
 void sndPlaySound(char *name, U32 mode)
@@ -45,11 +43,11 @@ void sndPlaySound(char *name, U32 mode)
 	if (FXBase.us_AudioOk) {
 	    dskBuildPathName(DISK_CHECK_FILE, SOUND_DIRECTORY, name, path);
 
-            SDL_LockAudio();
+            sndAudioLock();
 
 	    hscLoad(path);
 
-            SDL_UnlockAudio();
+            sndAudioUnlock();
 	}
     }
 }
@@ -71,9 +69,9 @@ void sndFading(short int targetVol)
         return;
     }
 
-    SDL_LockAudio();
+    sndAudioLock();
     currentVolume = clamp(setup.MusicVolume, 0, SND_MAX_VOLUME);
-    SDL_UnlockAudio();
+    sndAudioUnlock();
 
     if (restoreVolume < 0) {
         restoreVolume = currentVolume;
@@ -100,9 +98,9 @@ void sndFading(short int targetVol)
             currentVolume = destVolume;
         }
 
-        SDL_LockAudio();
+        sndAudioLock();
         setup.MusicVolume = currentVolume;
-        SDL_UnlockAudio();
+        sndAudioUnlock();
 
         SDL_Delay(fadeDelayMs);
     }
@@ -111,10 +109,10 @@ void sndFading(short int targetVol)
 void sndStopSound(U8 dummy)
 {
     if (FXBase.us_AudioOk) {
-        SDL_LockAudio();
+        sndAudioLock();
 
         hscReset();
 
-        SDL_UnlockAudio();
+        sndAudioUnlock();
     }
 }
