@@ -400,13 +400,14 @@ void gfxInit(void)
     }
 
     SDL_ShowWindow(sdlWindow);
-    SDL_RaiseWindow(sdlWindow);
-    SDL_SetWindowAlwaysOnTop(sdlWindow, true);
-    SDL_SetWindowAlwaysOnTop(sdlWindow, false);
 
-    SDL_SetRenderLogicalPresentation(sdlRenderer,
-                                     SCREEN_WIDTH, SCREEN_HEIGHT,
-                                     SDL_LOGICAL_PRESENTATION_DISABLED);
+    if (!SDL_SetRenderLogicalPresentation(sdlRenderer,
+                                          SCREEN_WIDTH, SCREEN_HEIGHT,
+                                          SDL_LOGICAL_PRESENTATION_LETTERBOX)) {
+        DebugMsg(ERR_WARNING, ERROR_MODULE_GFX,
+                 "SDL_SetRenderLogicalPresentation failed: %s",
+                 SDL_GetError());
+    }
 
     if (setup.FullScreen) {
         if (!SDL_SetWindowFullscreenMode(sdlWindow, NULL)) {
@@ -420,11 +421,26 @@ void gfxInit(void)
 
     SDL_GetWindowSize(sdlWindow, &currentWindowWidth, &currentWindowHeight);
 
+    if (sdlWindow) {
+        int pixelW = 0;
+        int pixelH = 0;
+
+        SDL_GetWindowSizeInPixels(sdlWindow, &pixelW, &pixelH);
+        if (pixelW > 0 && pixelH > 0) {
+            SDL_WarpMouseInWindow(sdlWindow, pixelW / 2, pixelH / 2);
+        }
+    }
+
     if (!setup.FullScreen) {
         windowPrefs.width = currentWindowWidth;
         windowPrefs.height = currentWindowHeight;
         windowPrefs.loaded = true;
     }
+
+    SDL_RaiseWindow(sdlWindow);
+    SDL_SetWindowAlwaysOnTop(sdlWindow, true);
+    SDL_SetWindowAlwaysOnTop(sdlWindow, false);
+    SDL_SetWindowKeyboardGrab(sdlWindow, true);
 
     windowSurface = SDL_CreateSurface(SCREEN_WIDTH, SCREEN_HEIGHT,
                                       SDL_PIXELFORMAT_XRGB8888);
@@ -444,7 +460,7 @@ void gfxInit(void)
         return;
     }
     {
-#ifdef SDL_SCALEMODE_PIXELART
+#if SDL_VERSION_ATLEAST(3, 4, 0)
         const SDL_ScaleMode scaleMode = SDL_SCALEMODE_PIXELART;
 #else
         const SDL_ScaleMode scaleMode = SDL_SCALEMODE_NEAREST;
@@ -2347,30 +2363,9 @@ void gfxRealRefreshArea(U16 x, U16 y, U16 w, U16 h)
                  "SDL_LockTexture failed: %s", SDL_GetError());
     }
 
-    if (setup.FullScreen) {
-        int winW = 0;
-        int winH = 0;
-        SDL_GetWindowSize(sdlWindow, &winW, &winH);
-        SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-        SDL_RenderClear(sdlRenderer);
-
-        const float scaleX = (float) winW / (float) SCREEN_WIDTH;
-        const float scaleY = (float) winH / (float) SCREEN_HEIGHT;
-        const float scale = SDL_min(scaleX, scaleY);
-        const float drawW = SCREEN_WIDTH * scale;
-        const float drawH = SCREEN_HEIGHT * scale;
-        SDL_FRect dst = {
-            .x = (winW - drawW) * 0.5f,
-            .y = (winH - drawH) * 0.5f,
-            .w = drawW,
-            .h = drawH
-        };
-
-        SDL_RenderTexture(sdlRenderer, sdlTexture, NULL, &dst);
-    } else {
-        SDL_RenderTexture(sdlRenderer, sdlTexture, NULL, NULL);
-    }
-
+    SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderClear(sdlRenderer);
+    SDL_RenderTexture(sdlRenderer, sdlTexture, NULL, NULL);
     SDL_RenderPresent(sdlRenderer);
 }
 
@@ -2546,6 +2541,15 @@ void gfxWindowToLogical(int windowX, int windowY, int *logicalX, int *logicalY)
         logicalXf = (float) windowX / (float) scale;
         logicalYf = (float) windowY / (float) scale;
     }
+
+    if (logicalXf < 0.0f)
+        logicalXf = 0.0f;
+    if (logicalYf < 0.0f)
+        logicalYf = 0.0f;
+    if (logicalXf > (float)(SCREEN_WIDTH - 1))
+        logicalXf = (float)(SCREEN_WIDTH - 1);
+    if (logicalYf > (float)(SCREEN_HEIGHT - 1))
+        logicalYf = (float)(SCREEN_HEIGHT - 1);
 
     if (logicalX)
         *logicalX = (int) logicalXf;

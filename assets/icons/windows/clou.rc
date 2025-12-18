@@ -1,0 +1,5 @@
+\
+    #include <windows.h>
+
+    // App icon for "clou"
+    IDI_ICON1 ICON "clou.ico"
