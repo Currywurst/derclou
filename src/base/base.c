@@ -658,8 +658,8 @@ static void parseOptions(int argc, char *argv[])
             switch (s[1]) {
             case 'g':
                 setup.Scale = max(atoi(s+2), 1);
-	setup.ScaleOverride = true;
-		break;
+	            setup.ScaleOverride = true;
+		        break;
 
             case 'd':
                 setup.Debug = max(atoi(s+2), 0);
